@@ -18,6 +18,9 @@ Scaffold a pre-built Next.js + ShadCN editor that lets the user design and expor
 - One-click bulk PNG export at every Apple/Google-required resolution via `html-to-image`
 - Light/dark variant toggle per slide, a toolbar theme picker (one palette preset per named style), locale select
 - A **Copy ideas** menu next to the headline field with formulas for hero, differentiator, feature, proof, and closer slides
+- Per-slide custom background colors, a live font picker, and importing licensed WOFF2/WOFF/TTF/OTF fonts
+- Image overlay elements with drag/resize/rotation/layering controls and directional edge fades
+- Toolbar Undo/Redo with 25-step in-session history
 - Guided in-place migration for older projects created by this skill; passive and explicit migrations keep legacy decks isolated until the user intentionally opts into connected canvas
 
 Supported devices out of the box:

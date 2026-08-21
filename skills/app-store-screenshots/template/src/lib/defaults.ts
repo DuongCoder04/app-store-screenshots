@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE } from "./locale";
-import { DEFAULT_THEME_ID, PLATFORM_DEVICES, PROJECT_SCHEMA_VERSION } from "./constants";
+import { DEFAULT_SCREENSHOT_FONT_ID, DEFAULT_THEME_ID, PLATFORM_DEVICES, PROJECT_SCHEMA_VERSION } from "./constants";
 import type { Device, Platform, ProjectState, Slide } from "./types";
 
 let _id = 0;
@@ -149,6 +149,7 @@ export const DEFAULT_PROJECT: ProjectState = {
   schemaVersion: PROJECT_SCHEMA_VERSION,
   appName: "My App",
   themeId: DEFAULT_THEME_ID,
+  fontId: DEFAULT_SCREENSHOT_FONT_ID,
   connectedCanvas: true,
   locales: [DEFAULT_LOCALE],
   locale: DEFAULT_LOCALE,

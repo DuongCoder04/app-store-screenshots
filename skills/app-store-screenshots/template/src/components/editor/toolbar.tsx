@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { AlertTriangle, Check, Cloud, Download, UnfoldHorizontal, RotateCcw } from "lucide-react";
+import { AlertTriangle, Check, Cloud, Download, Redo2, RotateCcw, Undo2, UnfoldHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,12 +21,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DEVICE_LABEL,
   PLATFORM_DEVICES,
+  SCREENSHOT_FONTS,
   THEMES,
   supportsLandscape,
   themeById,
 } from "@/lib/constants";
 import { detectPlatform } from "@/lib/defaults";
-import type { Device, Orientation, Platform, Theme } from "@/lib/types";
+import type { Device, ImportedFont, Orientation, Platform, ScreenshotFontId, Theme } from "@/lib/types";
+import { FontImporter } from "./font-importer";
 
 type Props = {
   appName: string;
@@ -35,6 +37,10 @@ type Props = {
   setThemeId: (v: string) => void;
   connectedCanvas: boolean;
   setConnectedCanvas: (v: boolean) => void;
+  fontId: ScreenshotFontId;
+  setFontId: (v: ScreenshotFontId) => void;
+  importedFont?: ImportedFont;
+  setImportedFont: (font: ImportedFont) => void;
   locale: string;
   setLocale: (v: string) => void;
   locales: string[];
@@ -45,6 +51,10 @@ type Props = {
   onExport: () => void;
   onResetAll: () => void;
   onResetDevice: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   exporting: string | null;
   savedAt: number | null;
   saveError: string | null;
@@ -118,6 +128,20 @@ export function Toolbar(props: Props) {
           ))}
         </SelectContent>
       </Select>
+
+      <Select value={props.fontId} onValueChange={(fontId) => props.setFontId(fontId as ScreenshotFontId)} disabled={props.busy}>
+        <SelectTrigger className="h-8 w-44 text-xs" aria-label="Screenshot font">
+          <SelectValue placeholder="Font" />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(SCREENSHOT_FONTS).map(([id, font]) => (
+            <SelectItem key={id} value={id}>{font.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {props.fontId === "self-hosted" && (
+        <FontImporter disabled={props.busy} importedFont={props.importedFont} onImported={props.setImportedFont} />
+      )}
 
       <span aria-hidden className="mx-1 h-5 w-px bg-border" />
 
@@ -194,6 +218,30 @@ export function Toolbar(props: Props) {
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <SaveStatus savedAt={props.savedAt} saveError={props.saveError} />
         <span aria-hidden className="h-5 w-px bg-border" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={props.onUndo}
+          title="Undo (⌘Z)"
+          aria-label="Undo"
+          disabled={props.busy || !props.canUndo}
+        >
+          <Undo2 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={props.onRedo}
+          title="Redo (⌘⇧Z)"
+          aria-label="Redo"
+          disabled={props.busy || !props.canRedo}
+        >
+          <Redo2 className="h-4 w-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

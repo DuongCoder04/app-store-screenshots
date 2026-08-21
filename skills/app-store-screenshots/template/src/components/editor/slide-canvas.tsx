@@ -7,6 +7,7 @@ import type {
   Device,
   ElementId,
   ElementTransform,
+  ImageElement,
   Orientation,
   SelectedElement,
   Slide,
@@ -31,7 +32,7 @@ import {
   tvW,
   watchW,
 } from "@/lib/constants";
-import { toTextElementId } from "@/lib/elements";
+import { imageElementKey, isImageElementId, toImageElementId, toTextElementId } from "@/lib/elements";
 import { img } from "@/lib/image-cache";
 import { pickText, resolveScreenshot } from "@/lib/locale";
 import { defaultTextElementFontSize, slideFontScales } from "@/lib/typography";
@@ -46,6 +47,7 @@ import {
   MacWindow,
   Phone,
 } from "./device-frames";
+import { ImageElementCanvas } from "./image-element-canvas";
 
 type FrameComp = React.ComponentType<{
   src: string;
@@ -125,6 +127,8 @@ type Props = {
   locale: string;
   appName?: string;
   appIcon?: string;
+  fontFamily?: string;
+  fontFaceCss?: string;
   editable?: boolean;
   edit?: EditHandlers;
   selectedElementId?: ElementId | null;
@@ -152,6 +156,8 @@ type DeckCanvasProps = {
   locale: string;
   appName?: string;
   appIcon?: string;
+  fontFamily?: string;
+  fontFaceCss?: string;
   connectedCanvas?: boolean;
   editable?: boolean;
   edit?: DeckEditHandlers;
@@ -303,7 +309,10 @@ function Caption({
 
 // ---------- Background ----------
 
-function backgroundFor(theme: Theme, inverted?: boolean) {
+function backgroundFor(theme: Theme, inverted?: boolean, customColor?: string) {
+  if (customColor) {
+    return `linear-gradient(160deg, ${customColor} 0%, ${shade(customColor, -6)} 100%)`;
+  }
   if (inverted) {
     return `linear-gradient(160deg, ${theme.bgAlt} 0%, ${shade(theme.bgAlt, -8)} 100%)`;
   }
@@ -515,6 +524,10 @@ export function getElementTransform(
     const textElement = slide.textElements?.find((element) => element.id === textId);
     return textElement?.transform;
   }
+  if (isImageElementId(id)) {
+    const imageId = imageElementKey(id);
+    return slide.imageElements?.find((element) => element.id === imageId)?.transform;
+  }
   const { defaults } = getSlideGeometry(slide, device, orientation);
   const rect = rectFor(id as BuiltInElementId, slide, defaults);
   if (!rect) return undefined;
@@ -545,6 +558,8 @@ export function SlideCanvas({
   locale,
   appName,
   appIcon,
+  fontFamily,
+  fontFaceCss,
   editable,
   edit,
   selectedElementId = null,
@@ -582,8 +597,10 @@ export function SlideCanvas({
         height: "100%",
         position: "relative",
         overflow: "hidden",
+        fontFamily,
       }}
     >
+      {fontFaceCss && <style>{fontFaceCss}</style>}
       <SlideBackground slide={slide} cW={cW} cH={cH} theme={theme} />
       <SlideElements
         slide={slide}
@@ -615,6 +632,8 @@ export function DeckCanvas({
   locale,
   appName,
   appIcon,
+  fontFamily,
+  fontFaceCss,
   connectedCanvas = true,
   editable,
   edit,
@@ -634,8 +653,10 @@ export function DeckCanvas({
         height: cH,
         position: "relative",
         overflow: "hidden",
+        fontFamily,
       }}
     >
+      {fontFaceCss && <style>{fontFaceCss}</style>}
       {slides.map((slide, index) => {
         const screenX = index * cW;
         const active = activeSlideId === slide.id;
@@ -771,7 +792,7 @@ function SlideBackground({
         position: "absolute",
         inset: 0,
         overflow: "hidden",
-        background: backgroundFor(theme, inverted),
+        background: backgroundFor(theme, inverted, slide.backgroundColor),
         color: inverted ? theme.fgAlt : theme.fg,
       }}
     >
@@ -1117,6 +1138,31 @@ function SlideElements({
     );
   }
 
+  function renderImageElement(imageElement: ImageElement, index: number) {
+    const elementId = toImageElementId(imageElement.id);
+    const rect = imageElement.transform;
+    const rotation = rect.rotation ?? 0;
+    const zIndex = rect.zIndex ?? 5 + index;
+    return (
+      <ImageElementCanvas
+        key={imageElement.id}
+        element={imageElement}
+        rect={toGlobal(rect)}
+        editable={editable}
+        previewScale={previewScale}
+        selected={selectedElementId === elementId}
+        allowOverflow={allowCrossScreen}
+        onChange={(transform) =>
+          edit?.onElementChange?.(
+            elementId,
+            toLocal({ ...transform, rotation: transform.rotation ?? rotation, zIndex: transform.zIndex ?? zIndex }),
+          )
+        }
+        onSelect={() => edit?.onSelectElement?.(elementId)}
+      />
+    );
+  }
+
   return (
     <>
       {secondaryRect &&
@@ -1128,6 +1174,7 @@ function SlideElements({
         )}
       {deviceRect && renderDevice("device", deviceRect, screenshot)}
       {renderCaption()}
+      {(slide.imageElements || []).map(renderImageElement)}
       {(slide.textElements || []).map(renderTextElement)}
     </>
   );
