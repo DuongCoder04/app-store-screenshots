@@ -17,11 +17,13 @@ import {
   CANVAS,
   CARPLAY_RATIO,
   IPAD_RATIO,
+  MAC_RATIO,
   MK_RATIO,
   TV_RATIO,
   WATCH_RATIO,
   carPlayW,
   ipadW,
+  macW,
   phoneW,
   phoneWSmall,
   tabletLW,
@@ -41,6 +43,7 @@ import {
   AndroidTabletL,
   AndroidTabletP,
   IPad,
+  MacWindow,
   Phone,
 } from "./device-frames";
 
@@ -68,6 +71,7 @@ function getFrameAspect(device: Device, orientation: Orientation) {
     case "tvos":        return TV_RATIO;
     case "watchos":     return WATCH_RATIO;
     case "carplay":     return CARPLAY_RATIO;
+    case "mac":         return MAC_RATIO;
     case "android-7":
     case "android-10":  return orientation === "landscape" ? 8 / 5 : 5 / 8;
     default:            return 1;
@@ -90,6 +94,8 @@ export function getFrameForDevice(device: Device, orientation: Orientation): {
       return { Comp: AppleWatch, widthFn: watchW, smallWidthFn: (cW, cH) => watchW(cW, cH, 0.42) };
     case "carplay":
       return { Comp: CarPlayScreen, widthFn: carPlayW, smallWidthFn: (cW, cH) => carPlayW(cW, cH, 0.7) };
+    case "mac":
+      return { Comp: MacWindow, widthFn: macW, smallWidthFn: (cW, cH) => macW(cW, cH, 0.7) };
     case "android":
       return { Comp: AndroidPhone, widthFn: phoneW, smallWidthFn: phoneWSmall };
     case "android-7":

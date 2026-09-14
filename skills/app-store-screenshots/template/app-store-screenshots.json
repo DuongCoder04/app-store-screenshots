@@ -298,6 +298,64 @@
         "inverted": true
       }
     ],
+    "mac": [
+      {
+        "id": "s_mac_hero",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Made for\nyour Mac."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mac_split",
+        "layout": "split-landscape",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Find it\nanyway."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mac_bottom",
+        "layout": "device-bottom",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "One shortcut\naway."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mac_top",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 03"
+        },
+        "headline": {
+          "en": "Nothing leaves\nthis Mac."
+        },
+        "screenshot": "",
+        "inverted": true
+      },
+      {
+        "id": "s_mac_more",
+        "layout": "no-device",
+        "label": {
+          "en": "MORE"
+        },
+        "headline": {
+          "en": "And so\nmuch more."
+        },
+        "screenshot": ""
+      }
+    ],
     "android-7": [
       {
         "id": "s_mppgoot8_d",
@@ -361,6 +419,7 @@
   "crossScreenMockupsByDevice": {
     "iphone": [],
     "ipad": [],
+    "mac": [],
     "android": [],
     "android-7": [],
     "android-10": [],

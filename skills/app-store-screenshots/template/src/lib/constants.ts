@@ -13,6 +13,7 @@ export const CANVAS: Record<Device, { w: number; h: number; wL?: number; hL?: nu
   // It is submitted in an iPhone slot, which accepts landscape, so the canvas is
   // the 6.9" iPhone size turned sideways to fit a wide head unit.
   carplay:       { w: 2868, h: 1320 },
+  mac:           { w: 2880, h: 1800 },
   android:       { w: 1080, h: 1920 },
   "android-7":   { w: 1200, h: 1920, wL: 1920, hL: 1200 },
   "android-10":  { w: 1600, h: 2560, wL: 2560, hL: 1600 },
@@ -62,6 +63,12 @@ export const EXPORT_SIZES: Record<Device, ExportSize[]> = {
     { label: '6.3" landscape', w: 2622, h: 1206 },
     { label: '6.1" landscape', w: 2436, h: 1125 },
   ],
+  mac: [
+    { label: "2880×1800", w: 2880, h: 1800 },
+    { label: "2560×1600", w: 2560, h: 1600 },
+    { label: "1440×900",  w: 1440, h: 900 },
+    { label: "1280×800",  w: 1280, h: 800 },
+  ],
   android:       [{ label: "Phone",          w: 1080, h: 1920 }],
   "android-7":   [{ label: '7" Portrait',    w: 1200, h: 1920 }],
   "android-10":  [{ label: '10" Portrait',   w: 1600, h: 2560 }],
@@ -97,6 +104,7 @@ export const WATCH_RATIO = 422 / 514;    // Apple Watch Ultra, the largest accep
 // Widescreen 1920x720, Portrait 900x1200, Standard Video Playback 1920x1080.
 // "Standard" is the default here; change this constant to target another.
 export const CARPLAY_RATIO = 800 / 480;
+export const MAC_RATIO   = 16 / 10;      // Mac App Store 16:10
 
 // iPhone mockup screen overlay (pre-measured)
 export const PHONE_SCREEN = {
@@ -134,6 +142,9 @@ export function watchW(cW: number, cH: number, clamp = 0.52) {
 // Height-bound on the wide canvas: the head unit must clear the caption block.
 export function carPlayW(cW: number, cH: number, clamp = 0.86) {
   return Math.min(clamp, 0.58 * (cH / cW) * CARPLAY_RATIO);
+}
+export function macW(cW: number, cH: number, clamp = 0.86) {
+  return Math.min(clamp, 0.82 * (cH / cW) * MAC_RATIO);
 }
 
 // ---------- Themes ----------
@@ -409,6 +420,7 @@ export const DEVICE_LABEL: Record<Device, string> = {
   tvos: "Apple TV",
   watchos: "Apple Watch",
   carplay: "CarPlay (iPhone slot)",
+  mac: "Mac",
   android: "Android Phone",
   "android-7": 'Android 7" Tablet',
   "android-10": 'Android 10" Tablet',

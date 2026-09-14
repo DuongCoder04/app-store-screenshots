@@ -4,6 +4,7 @@ export type Device =
   | "tvos"
   | "watchos"
   | "carplay"
+  | "mac"
   | "android"
   | "android-7"
   | "android-10"
@@ -11,7 +12,7 @@ export type Device =
 
 export type Orientation = "portrait" | "landscape";
 
-export type Platform = "ios" | "android";
+export type Platform = "ios" | "macos" | "android";
 
 // Layouts the editor can render. Vary across slides for visual rhythm.
 export type SlideLayout =

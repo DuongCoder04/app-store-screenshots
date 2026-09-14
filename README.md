@@ -14,8 +14,8 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - Keeps older projects safe with isolated-screen export mode until you opt into connected crops
 - Saves every deck to `app-store-screenshots.json`, so the project is git-trackable and resumable
 - Uploads picked screenshots into `public/screenshots/uploaded/<hash>.png`
-- Supports iPhone, iPad, Apple TV, Apple Watch, CarPlay, Android phone, Android tablet, and Play Store feature graphic decks
-- Exports exact PNG bundles for all required App Store and Google Play sizes
+- Supports iPhone, iPad, Apple TV, Apple Watch, CarPlay, Mac, Android phone, Android tablet, and Play Store feature graphic decks
+- Exports exact PNG bundles for all required App Store, Mac App Store, and Google Play sizes
 - Supports locales, RTL-aware copy/layout guidance, reusable themes, and in-place project migration
 - Ships 18 named visual styles with deep specs and a headline copy library
 
@@ -26,8 +26,8 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - **Screen sidebar** - add, select, and drag-to-reorder screens with live thumbnails.
 - **Inspector** - edit layout, labels, headlines, screenshots, element stacking, and transforms from the right panel. A **Copy ideas** menu next to the headline drops in a proven formula to rewrite.
 - **Theme picker** - switch palette presets from the toolbar, including one preset per named style.
-- **Platform switcher** - keep iOS and Android decks side by side while sharing the same editor workflow.
-- **Device selector** - design for iPhone, iPad, Apple TV, Apple Watch, CarPlay, Android phone, Android tablets, and feature graphic formats.
+- **Platform switcher** - keep iOS, Mac, and Android decks side by side while sharing the same editor workflow.
+- **Device selector** - design for iPhone, iPad, Apple TV, Apple Watch, CarPlay, Mac, Android phone, Android tablets, and feature graphic formats.
 - **Autosave** - writes to disk through `/api/project` and mirrors to `localStorage` for instant reloads.
 - **Export bundle** - downloads a zip organized by platform, device, resolution, and locale.
 
@@ -86,6 +86,12 @@ I want a sharp modern style with high contrast and 7 slides.
 ```
 
 ```text
+Build Mac App Store screenshots for my menu-bar utility.
+The app lives in the menu bar and finds files on this Mac instantly.
+I want 5 slides, a dark Mac window frame, and a calm desktop feel.
+```
+
+```text
 Build App Store screenshots for my language learning app.
 I need English, German, and Arabic screenshot sets.
 Use two reusable themes: clean-light and dark-bold.
@@ -117,7 +123,8 @@ project/
 │       │   ├── ipad/{locale}/01.png
 │       │   ├── tvos/{locale}/01.png
 │       │   ├── watchos/{locale}/01.png
-│       │   └── carplay/{locale}/01.png
+│       │   ├── carplay/{locale}/01.png
+│       │   └── mac/{locale}/01.png
 │       └── android/
 │           ├── phone/{locale}/01.png
 │           ├── tablet-7/portrait/{locale}/01.png
@@ -180,6 +187,15 @@ Uploaded files are saved under `public/screenshots/uploaded/`, and the canonical
 
 App Store Connect has no CarPlay screenshot slot: CarPlay shots are uploaded into the iPhone slot, so the CarPlay deck exports landscape iPhone sizes with a head-unit frame.
 
+### Mac App Store
+
+| Display | Resolution |
+|---------|------------|
+| 2880 × 1800 | 2880 x 1800 |
+| 2560 × 1600 | 2560 x 1600 |
+| 1440 × 900 | 1440 x 900 |
+| 1280 × 800 | 1280 x 800 |
+
 ### Google Play Store
 
 | Device | Resolution |
@@ -191,7 +207,7 @@ App Store Connect has no CarPlay screenshot slot: CarPlay shots are uploaded int
 | 10" tablet landscape | 2560 x 1600 |
 | Feature graphic | 1024 x 500 |
 
-Screenshots are designed at the largest size for each device and scaled down for smaller exports. Every export waits until each screenshot has actually painted (Safari/WebKit decodes them asynchronously) and warns instead of silently writing a blank device. Android, iPad, Apple TV, Apple Watch and CarPlay frames are CSS-rendered, while iPhone uses the included `mockup.png` bezel.
+Screenshots are designed at the largest size for each device and scaled down for smaller exports. Every export waits until each screenshot has actually painted (Safari/WebKit decodes them asynchronously) and warns instead of silently writing a blank device. Android, iPad, Apple TV, Apple Watch, CarPlay and Mac frames are CSS-rendered, while iPhone uses the included `mockup.png` bezel.
 
 ## Project State
 

@@ -121,6 +121,47 @@ function tabletStarter(kind: "7" | "10"): Slide[] {
   ];
 }
 
+function macStarter(): Slide[] {
+  return [
+    {
+      id: nid(),
+      layout: "hero",
+      label: en("MEET YOUR APP"),
+      headline: en("Made for\nyour Mac."),
+      screenshot: "",
+    },
+    {
+      id: nid(),
+      layout: "split-landscape",
+      label: en("FEATURE 01"),
+      headline: en("Find it\nanyway."),
+      screenshot: "",
+    },
+    {
+      id: nid(),
+      layout: "device-bottom",
+      label: en("FEATURE 02"),
+      headline: en("One shortcut\naway."),
+      screenshot: "",
+    },
+    {
+      id: nid(),
+      layout: "device-top",
+      label: en("FEATURE 03"),
+      headline: en("Nothing leaves\nthis Mac."),
+      screenshot: "",
+      inverted: true,
+    },
+    {
+      id: nid(),
+      layout: "no-device",
+      label: en("MORE"),
+      headline: en("And so\nmuch more."),
+      screenshot: "",
+    },
+  ];
+}
+
 function fgStarter(): Slide[] {
   return [
     {
@@ -150,6 +191,7 @@ export const DEFAULT_PROJECT: ProjectState = {
     tvos: tvStarter(),
     watchos: watchStarter(),
     carplay: carplayStarter(),
+    mac: macStarter(),
     "android-7": tabletStarter("7"),
     "android-10": tabletStarter("10"),
     "feature-graphic": fgStarter(),
@@ -170,6 +212,7 @@ const IOS_DEVICES: ReadonlySet<Device> = new Set<Device>([
   "iphone", "ipad", "tvos", "watchos", "carplay",
 ]);
 
-export function detectPlatform(device: Device): "ios" | "android" {
+export function detectPlatform(device: Device): "ios" | "macos" | "android" {
+  if (device === "mac") return "macos";
   return IOS_DEVICES.has(device) ? "ios" : "android";
 }

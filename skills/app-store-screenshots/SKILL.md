@@ -1,6 +1,6 @@
 ---
 name: app-store-screenshots
-description: Use when building App Store or Google Play screenshot pages, generating exportable marketing screenshots for iOS and/or Android apps, or scaffolding a screenshot editor with Next.js. Triggers on app store, play store, screenshots, marketing assets, html-to-image, phone mockup, android screenshots, feature graphic.
+description: Use when building App Store or Google Play screenshot pages, generating exportable marketing screenshots for iOS, macOS, and/or Android apps, or scaffolding a screenshot editor with Next.js. Triggers on app store, mac app store, play store, screenshots, marketing assets, html-to-image, phone mockup, mac mockup, android screenshots, feature graphic.
 ---
 
 # App Store & Google Play Screenshots Generator
@@ -14,7 +14,7 @@ Scaffold a pre-built Next.js + ShadCN editor that lets the user design and expor
 - Cross-screen mockups: phone/device frames, captions, and layered elements can be moved across adjacent screens, then exported as clipped crops
 - Drop-target screenshot picker (file → saved to `public/screenshots/uploaded/<hash>.png`)
 - Auto-save to **`app-store-screenshots.json`** at the project root (git-trackable) + `localStorage` mirror
-- Easy iOS ↔ Android platform switch — separate slide decks live side by side
+- Easy iOS ↔ Mac ↔ Android platform switch — separate slide decks live side by side
 - One-click bulk PNG export at every Apple/Google-required resolution via `html-to-image`
 - Light/dark variant toggle per slide, a toolbar theme picker (one palette preset per named style), locale select
 - A **Copy ideas** menu next to the headline field with formulas for hero, differentiator, feature, proof, and closer slides
@@ -26,6 +26,7 @@ Supported devices out of the box:
 - **Apple TV** (landscape, 4K + HD) — Apple App Store
 - **Apple Watch** (portrait, every Ultra/Series size) — Apple App Store
 - **CarPlay** (landscape head unit) — uploaded into the **iPhone** slot; see "Apple TV, Apple Watch and CarPlay" under Step 5
+- **Mac** (16:10) — Mac App Store (`2880×1800`, `2560×1600`, `1440×900`, `1280×800`)
 - **Android Phone** (portrait) — Google Play
 - **Android Tablet 7"** (portrait + landscape) — Google Play
 - **Android Tablet 10"** (portrait + landscape) — Google Play
@@ -135,7 +136,7 @@ const path = require("path");
 
 const PROJECT_FILE = "app-store-screenshots.json";
 const DEFAULT_LOCALE = "en";
-const DEVICE_KEYS = ["iphone", "ipad", "tvos", "watchos", "carplay", "android", "android-7", "android-10", "feature-graphic"];
+const DEVICE_KEYS = ["iphone", "ipad", "tvos", "watchos", "carplay", "mac", "android", "android-7", "android-10", "feature-graphic"];
 const LAYOUTS = ["hero", "device-bottom", "device-top", "two-devices", "no-device", "split-landscape", "feature-graphic"];
 
 function readJson(file) {
@@ -334,8 +335,8 @@ Ask the user these. Do not proceed until you have answers:
 
 ### Optional
 
-6. **Target stores** — Apple App Store only, Google Play only, or both? Determines which platform decks to seed.
-7. **iPad / Android tablet screenshots** — If yes, what sizes and orientations?
+6. **Target stores** — Apple App Store, Mac App Store, Google Play, or a mix? Determines which platform decks to seed.
+7. **iPad / Mac / Android tablet screenshots** — If yes, what sizes and orientations?
 8. **Apple TV / Apple Watch / CarPlay** — Does the app have a tvOS or watchOS app, or CarPlay support? Each gets its own deck.
 9. **Feature Graphic** — Want a 1024×500 Play Store banner too?
 10. **Localized screenshots** — Languages? (e.g. en, de, es, pt, ja, ar, he)
@@ -386,7 +387,8 @@ public/
     │   ├── ipad/{locale}/01.png   … N.png
     │   ├── tvos/{locale}/01.png   … N.png   # Apple TV, 16:9
     │   ├── watchos/{locale}/01.png … N.png  # Apple Watch
-    │   └── carplay/{locale}/01.png … N.png  # CarPlay head-unit captures
+    │   ├── carplay/{locale}/01.png … N.png  # CarPlay head-unit captures
+    │   └── mac/{locale}/01.png    … N.png   # Mac, 16:10
     └── android/
         ├── phone/{locale}/01.png  … N.png
         ├── tablet-7/{portrait|landscape}/{locale}/...
@@ -464,7 +466,7 @@ Vary the `layout` field across slides. The editor exposes:
 - `device-top` — flipped, device above caption (good contrast slide)
 - `two-devices` — back + front phones layered
 - `no-device` — big standalone headline (use sparingly)
-- `split-landscape` — caption left + device right (tablet landscape only)
+- `split-landscape` — caption left + device right (tablet landscape and Mac)
 - `feature-graphic` — Play Store banner (1024×500)
 
 Never repeat the same layout twice in a row. Use 1-2 `inverted` (dark) slides for visual rhythm.
@@ -629,7 +631,7 @@ Every Apple TV and Apple Watch size below was read from App Store Connect's own 
 
 ### Visual Quality
 - No two adjacent slides share the same layout
-- Landscape tablet slides use `split-landscape` — never two devices side-by-side
+- Landscape tablet and Mac slides use `split-landscape` — never two devices side-by-side
 - Apple TV and CarPlay decks lead with `split-landscape` or `hero`; Watch headlines fit on the 422 px canvas without wrapping mid-phrase
 - At least one contrast (`inverted: true`) slide when the deck is long enough
 - For decks with 5+ slides, either one cross-screen/cross-canvas moment exists or there is a clear reason to keep every screen isolated
@@ -728,7 +730,7 @@ When you finish scaffolding, **start the dev server** (`bun dev` / `pnpm dev` / 
    bun dev       # → http://localhost:3000
    ```
    Substitute `pnpm` / `yarn` / `npm run` as appropriate for what was detected in Step 2.
-3. Which platforms have starter decks seeded (iOS, Android, or both).
+3. Which platforms have starter decks seeded (iOS, Mac, Android, or a mix).
 4. Any user-supplied screenshots that didn't match the expected filenames (so they can rename or use the in-editor drop target).
 5. Point them at the **Export bundle** button once they're happy with the layouts.
 6. **Invite further edits:** say something like _"Feel free to ask me to make any changes you'd like to the screenshots — copy, layout, palette, anything. I can iterate with you."_

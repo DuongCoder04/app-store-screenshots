@@ -120,7 +120,17 @@ export function Sidebar({
           type="button"
           className="w-full"
           variant="default"
-          onClick={() => onAdd(newSlide(device === "feature-graphic" ? "feature-graphic" : "device-bottom"))}
+          onClick={() =>
+            onAdd(
+              newSlide(
+                device === "feature-graphic"
+                  ? "feature-graphic"
+                  : device === "mac"
+                    ? "split-landscape"
+                    : "device-bottom",
+              ),
+            )
+          }
           disabled={disabled}
         >
           <Plus className="h-4 w-4" /> Add screen

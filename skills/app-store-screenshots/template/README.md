@@ -13,9 +13,9 @@ bun dev       # http://localhost:3000
 
 - **Connected canvas editor** (`src/components/editor/`) — every screen sits on one horizontal canvas, so phones, captions, and other elements can be dragged across screen boundaries and exported as split crops when Connected mode is enabled.
 - **Screen controls** — drag-to-reorder screens, click-to-edit text, screenshot drop targets, per-screen layout switcher, dark/light toggle.
-- **Device frames** (`src/components/editor/device-frames.tsx`) — iPhone (PNG mockup), iPad, Apple TV, Apple Watch, CarPlay head unit, Android phone, Android tablet (portrait + landscape), feature graphic.
+- **Device frames** (`src/components/editor/device-frames.tsx`) — iPhone (PNG mockup), iPad, Apple TV, Apple Watch, CarPlay head unit, Mac window, Android phone, Android tablet (portrait + landscape), feature graphic.
 - **Auto-save (git-trackable)** — every change is persisted within ~600ms to **`app-store-screenshots.json`** at the project root (via `/api/project`) **and** mirrored to `localStorage` as an instant-paint cache. Commit `app-store-screenshots.json` and you can `git clone` to another machine and resume exactly where you left off.
-- **Multi-device decks** — iOS and Android slide decks live side by side; switching the platform tab preserves both.
+- **Multi-device decks** — iOS, Mac, and Android slide decks live side by side; switching the platform tab preserves all three.
 - **One-click export** — bulk PNG export at any required App Store / Play Store resolution using `html-to-image`; each PNG is rendered from the current connected or isolated deck mode.
 - **Project migration** — older `app-store-screenshots.json` files are migrated on load. Existing per-slide transforms remain valid, and connected crops become available without rewriting the deck by hand.
 - **Legacy-safe mode** — pre-v2 projects opened directly in the editor start in isolated-screen mode first, then can opt into connected crops with the toolbar's Connected/Isolated control. Skill-run in-place migrations keep legacy decks isolated unless the project had already explicitly opted into connected canvas.
@@ -27,9 +27,10 @@ Two ways:
 1. **Drop a file in the inspector** — drag-and-drop or click Pick. The file is sent to `/api/upload`, hashed, and written to `public/screenshots/uploaded/<hash>.png`. The slide stores the resulting `/screenshots/uploaded/...` path, so commit those files alongside `app-store-screenshots.json` and the screenshots survive a `git clone`.
 2. **Reference a static file** — put PNGs under `public/screenshots/{platform}/{device}/{locale}/` and reference them by path. Default sample slides expect:
    - `public/screenshots/apple/iphone/en/...`
-   - `public/screenshots/android/phone/en/...`
    - `public/screenshots/apple/ipad/en/...`
    - `public/screenshots/apple/{tvos,watchos,carplay}/en/...` for Apple TV, Apple Watch and CarPlay decks
+   - `public/screenshots/apple/mac/en/...`
+   - `public/screenshots/android/phone/en/...`
 
 Update the matching `screenshot` fields in `app-store-screenshots.json` to point at whatever filenames you choose.
 

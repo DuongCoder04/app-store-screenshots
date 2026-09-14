@@ -219,6 +219,55 @@ export function AndroidTabletL({ src, alt = "", style, hideEmpty }: FrameProps) 
   );
 }
 
+export function MacWindow({ src, alt = "", style, hideEmpty }: FrameProps) {
+  const resolved = img(src);
+  return (
+    <div style={{ position: "relative", aspectRatio: "16 / 10", ...style }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: "2.2% / 3.5%",
+          background: "linear-gradient(180deg, #3A3A3C 0%, #2C2C2E 8%, #1C1C1E 100%)",
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12), 0 18px 60px rgba(0,0,0,0.45)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          style={{
+            height: "7%",
+            display: "flex",
+            alignItems: "center",
+            gap: "1.1%",
+            padding: "0 1.6%",
+            background: "linear-gradient(180deg, #4A4A4C 0%, #3A3A3C 100%)",
+            borderBottom: "1px solid rgba(0,0,0,0.35)",
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ width: "1.35%", aspectRatio: "1", borderRadius: "50%", background: "#FF5F57", boxShadow: "inset 0 0 0 0.5px rgba(0,0,0,0.25)" }} />
+          <span style={{ width: "1.35%", aspectRatio: "1", borderRadius: "50%", background: "#FEBC2E", boxShadow: "inset 0 0 0 0.5px rgba(0,0,0,0.25)" }} />
+          <span style={{ width: "1.35%", aspectRatio: "1", borderRadius: "50%", background: "#28C840", boxShadow: "inset 0 0 0 0.5px rgba(0,0,0,0.25)" }} />
+        </div>
+        <div style={{ flex: 1, overflow: "hidden", background: "#000", minHeight: 0 }}>
+          {resolved ? (
+            <img
+              src={resolved}
+              alt={alt}
+              style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+              draggable={false}
+            />
+          ) : hideEmpty ? null : (
+            <EmptySlot />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function IPad({ src, alt = "", style, hideEmpty }: FrameProps) {
   const resolved = img(src);
   return (

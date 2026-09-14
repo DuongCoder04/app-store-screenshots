@@ -25,7 +25,7 @@ import {
   themeById,
 } from "@/lib/constants";
 import { detectPlatform } from "@/lib/defaults";
-import type { Device, Orientation, Theme } from "@/lib/types";
+import type { Device, Orientation, Platform, Theme } from "@/lib/types";
 
 type Props = {
   appName: string;
@@ -56,8 +56,9 @@ export function Toolbar(props: Props) {
   const [resetOpen, setResetOpen] = React.useState(false);
 
   // Track last device per platform so iOS/Android tabs preserve user's choice.
-  const lastByPlatform = React.useRef<{ ios: Device; android: Device }>({
+  const lastByPlatform = React.useRef<Record<Platform, Device>>({
     ios: platform === "ios" ? props.device : "iphone",
+    macos: platform === "macos" ? props.device : "mac",
     android: platform === "android" ? props.device : "android",
   });
   React.useEffect(() => {
@@ -122,13 +123,16 @@ export function Toolbar(props: Props) {
         value={platform}
         onValueChange={(p) => {
           if (props.busy) return;
-          const next = p === "ios" ? lastByPlatform.current.ios : lastByPlatform.current.android;
+          const next = lastByPlatform.current[p as Platform];
           props.setDevice(next);
         }}
       >
         <TabsList className="h-8 p-0.5">
           <TabsTrigger value="ios" className="h-7 px-3 text-xs" disabled={props.busy}>
             iOS
+          </TabsTrigger>
+          <TabsTrigger value="macos" className="h-7 px-3 text-xs" disabled={props.busy}>
+            Mac
           </TabsTrigger>
           <TabsTrigger value="android" className="h-7 px-3 text-xs" disabled={props.busy}>
             Android
@@ -153,6 +157,8 @@ export function Toolbar(props: Props) {
               <SelectItem value="watchos">{DEVICE_LABEL.watchos}</SelectItem>
               <SelectItem value="carplay">{DEVICE_LABEL.carplay}</SelectItem>
             </>
+          ) : platform === "macos" ? (
+            <SelectItem value="mac">{DEVICE_LABEL.mac}</SelectItem>
           ) : (
             <>
               <SelectItem value="android">{DEVICE_LABEL.android}</SelectItem>
