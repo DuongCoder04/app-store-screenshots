@@ -1,7 +1,6 @@
 "use client";
 import * as React from "react";
 import JSZip from "jszip";
-import { toPng } from "html-to-image";
 import { Toaster, toast } from "sonner";
 import {
   getExportSizes,
@@ -11,6 +10,7 @@ import {
 } from "@/lib/constants";
 import { detectPlatform, nid } from "@/lib/defaults";
 import { isBuiltInElementId, isTextElementId, textElementKey } from "@/lib/elements";
+import { renderSlide } from "@/lib/export-render";
 import { preloadImages } from "@/lib/image-cache";
 import { resolveScreenshot, writeLocalized } from "@/lib/locale";
 import { useProject } from "@/lib/storage";
@@ -417,42 +417,50 @@ export function ScreenshotEditor() {
     const platform = detectPlatform(state.device);
     const zip = new JSZip();
     const totalUnits = sizes.length * locales.length * currentSlides.length;
-    let unit = 0;
+    const totalRenders = locales.length * currentSlides.length;
+    let render = 0;
     let okCount = 0;
     let failed = 0;
     const errors: string[] = [];
+    const incomplete: string[] = [];
 
+    // Render each slide once per locale at canvas resolution, then scale that
+    // one render to every export size. The sizes are all scalings of the same
+    // design, so re-rendering the DOM per size only added time.
     for (const locale of locales) {
       setExportLocaleOverride(locale);
       await waitForPaint();
 
-      for (const size of sizes) {
-        for (let i = 0; i < currentSlides.length; i++) {
-          const slide = currentSlides[i];
-          unit += 1;
-          setExporting(`${unit}/${totalUnits}`);
-          setExportSlideIndex(i);
-          await waitForPaint();
-          const el = exportRef.current;
-          if (!el) {
-            failed += 1;
-            errors.push(`${locale} ${size.w}×${size.h} screen ${i + 1}: render target missing`);
-            continue;
-          }
-          try {
-            const dataUrl = await captureSlide(el, cW, cH, size.w, size.h);
-            const base64 = dataUrl.split(",")[1] || "";
-            const filename = `${String(i + 1).padStart(2, "0")}-${slide.layout}.png`;
+      for (let i = 0; i < currentSlides.length; i++) {
+        const slide = currentSlides[i];
+        render += 1;
+        setExporting(`${render}/${totalRenders}`);
+        setExportSlideIndex(i);
+        await waitForPaint();
+        const el = exportRef.current;
+        if (!el) {
+          failed += sizes.length;
+          errors.push(`${locale} screen ${i + 1}: render target missing`);
+          continue;
+        }
+        const filename = `${String(i + 1).padStart(2, "0")}-${slide.layout}.png`;
+        let written = 0;
+        try {
+          const rendered = await captureSlide(el, cW, cH);
+          if (rendered.missingImages > 0) incomplete.push(`${locale} screen ${i + 1}`);
+          for (const size of sizes) {
+            const base64 = rendered.toPng(size.w, size.h).split(",")[1] || "";
             const path = `${platform}/${state.device}/${size.w}x${size.h}/${locale}/${filename}`;
             zip.file(path, base64, { base64: true });
-            okCount += 1;
-          } catch (e) {
-            failed += 1;
-            const msg = e instanceof Error ? e.message : String(e);
-            errors.push(`${locale} ${size.w}×${size.h} screen ${i + 1}: ${msg}`);
-            console.error("Export failed", { slideId: slide.id, locale, size }, e);
+            written += 1;
           }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          errors.push(`${locale} screen ${i + 1}: ${msg}`);
+          console.error("Export failed", { slideId: slide.id, locale }, e);
         }
+        okCount += written;
+        failed += sizes.length - written;
       }
     }
 
@@ -475,6 +483,13 @@ export function ScreenshotEditor() {
       }
     }
 
+    if (incomplete.length > 0) {
+      toast.warning("Some screenshots may be missing from the export", {
+        description: `${incomplete.slice(0, 3).join(", ")}${incomplete.length > 3 ? "…" : ""}: a screenshot never finished rendering. Check those files, or export again.`,
+        duration: 12000,
+      });
+    }
+
     const summary = `${locales.length} locale${locales.length === 1 ? "" : "s"} × ${sizes.length} size${sizes.length === 1 ? "" : "s"}`;
     if (failed === 0) {
       toast.success(`Exported ${okCount} PNGs (${summary})`);
@@ -489,16 +504,10 @@ export function ScreenshotEditor() {
     }
   }
 
-  async function captureSlide(
-    el: HTMLElement,
-    sourceW: number,
-    sourceH: number,
-    exportW: number,
-    exportH: number,
-  ) {
-    // html-to-image needs the node at (0,0). Let the library scale the source
-    // canvas into the requested output dimensions; CSS transforms leave
-    // transparent gutters when export aspect ratios differ by a few pixels.
+  async function captureSlide(el: HTMLElement, sourceW: number, sourceH: number) {
+    // html-to-image needs the node at (0,0) and untransformed. Each export size
+    // is a scaled draw of this one render, so aspect ratios that differ by a few
+    // pixels are stretched rather than leaving transparent gutters.
     const prev = {
       left: el.style.left,
       top: el.style.top,
@@ -514,16 +523,7 @@ export function ScreenshotEditor() {
     el.style.transformOrigin = "top left";
     el.style.zIndex = "-1";
     try {
-      const dataUrl = await toPng(el, {
-        width: sourceW,
-        height: sourceH,
-        canvasWidth: exportW,
-        canvasHeight: exportH,
-        pixelRatio: 1,
-        cacheBust: false,
-        backgroundColor: "#ffffff",
-      });
-      return dataUrl;
+      return await renderSlide(el, sourceW, sourceH);
     } finally {
       el.style.left = prev.left || "-99999px";
       el.style.top = prev.top || "0px";

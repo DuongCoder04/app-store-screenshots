@@ -14,7 +14,7 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - Keeps older projects safe with isolated-screen export mode until you opt into connected crops
 - Saves every deck to `app-store-screenshots.json`, so the project is git-trackable and resumable
 - Uploads picked screenshots into `public/screenshots/uploaded/<hash>.png`
-- Supports iOS, iPad, Android phone, Android tablet, and Play Store feature graphic decks
+- Supports iPhone, iPad, Apple TV, Apple Watch, CarPlay, Android phone, Android tablet, and Play Store feature graphic decks
 - Exports exact PNG bundles for all required App Store and Google Play sizes
 - Supports locales, RTL-aware copy/layout guidance, reusable themes, and in-place project migration
 - Ships 18 named visual styles with deep specs and a headline copy library
@@ -27,7 +27,7 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - **Inspector** - edit layout, labels, headlines, screenshots, element stacking, and transforms from the right panel. A **Copy ideas** menu next to the headline drops in a proven formula to rewrite.
 - **Theme picker** - switch palette presets from the toolbar, including one preset per named style.
 - **Platform switcher** - keep iOS and Android decks side by side while sharing the same editor workflow.
-- **Device selector** - design for iPhone, iPad, Android phone, Android tablets, and feature graphic formats.
+- **Device selector** - design for iPhone, iPad, Apple TV, Apple Watch, CarPlay, Android phone, Android tablets, and feature graphic formats.
 - **Autosave** - writes to disk through `/api/project` and mirrors to `localStorage` for instant reloads.
 - **Export bundle** - downloads a zip organized by platform, device, resolution, and locale.
 
@@ -114,7 +114,10 @@ project/
 │   └── screenshots/
 │       ├── apple/
 │       │   ├── iphone/{locale}/01.png
-│       │   └── ipad/{locale}/01.png
+│       │   ├── ipad/{locale}/01.png
+│       │   ├── tvos/{locale}/01.png
+│       │   ├── watchos/{locale}/01.png
+│       │   └── carplay/{locale}/01.png
 │       └── android/
 │           ├── phone/{locale}/01.png
 │           ├── tablet-7/portrait/{locale}/01.png
@@ -138,6 +141,7 @@ project/
     ├── defaults.ts
     ├── storage.ts
     ├── image-cache.ts
+    ├── export-render.ts
     └── types.ts
 ```
 
@@ -158,12 +162,23 @@ Uploaded files are saved under `public/screenshots/uploaded/`, and the canonical
 
 ### Apple App Store
 
-| Display | Resolution |
-|---------|------------|
-| 6.9" | 1320 x 2868 |
-| 6.5" | 1284 x 2778 |
-| 6.3" | 1206 x 2622 |
-| 6.1" | 1125 x 2436 |
+| Device | Resolution |
+|--------|------------|
+| iPhone 6.9" | 1320 x 2868 |
+| iPhone 6.5" | 1284 x 2778 |
+| iPhone 6.3" | 1206 x 2622 |
+| iPhone 6.1" | 1125 x 2436 |
+| iPad 13" | 2064 x 2752 |
+| iPad Pro 12.9" | 2048 x 2732 |
+| Apple TV | 3840 x 2160, 1920 x 1080 |
+| Apple Watch Ultra | 422 x 514, 410 x 502 |
+| Apple Watch Series 10 | 416 x 496 |
+| Apple Watch Series 7 | 396 x 484 |
+| Apple Watch Series 4 | 368 x 448 |
+| Apple Watch Series 3 | 312 x 390 |
+| CarPlay (iPhone slot, landscape) | 2868 x 1320, 2778 x 1284, 2622 x 1206, 2436 x 1125 |
+
+App Store Connect has no CarPlay screenshot slot: CarPlay shots are uploaded into the iPhone slot, so the CarPlay deck exports landscape iPhone sizes with a head-unit frame.
 
 ### Google Play Store
 
@@ -176,7 +191,7 @@ Uploaded files are saved under `public/screenshots/uploaded/`, and the canonical
 | 10" tablet landscape | 2560 x 1600 |
 | Feature graphic | 1024 x 500 |
 
-Screenshots are designed at the largest size for each platform and scaled down for smaller exports. Android frames are CSS-rendered, while iPhone uses the included `mockup.png` bezel.
+Screenshots are designed at the largest size for each device and scaled down for smaller exports. Every export waits until each screenshot has actually painted (Safari/WebKit decodes them asynchronously) and warns instead of silently writing a blank device. Android, iPad, Apple TV, Apple Watch and CarPlay frames are CSS-rendered, while iPhone uses the included `mockup.png` bezel.
 
 ## Project State
 

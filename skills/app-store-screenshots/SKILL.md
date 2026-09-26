@@ -23,6 +23,9 @@ Scaffold a pre-built Next.js + ShadCN editor that lets the user design and expor
 Supported devices out of the box:
 - **iPhone** (portrait) — Apple App Store
 - **iPad** (portrait) — Apple App Store
+- **Apple TV** (landscape, 4K + HD) — Apple App Store
+- **Apple Watch** (portrait, every Ultra/Series size) — Apple App Store
+- **CarPlay** (landscape head unit) — uploaded into the **iPhone** slot; see "Apple TV, Apple Watch and CarPlay" under Step 5
 - **Android Phone** (portrait) — Google Play
 - **Android Tablet 7"** (portrait + landscape) — Google Play
 - **Android Tablet 10"** (portrait + landscape) — Google Play
@@ -132,7 +135,7 @@ const path = require("path");
 
 const PROJECT_FILE = "app-store-screenshots.json";
 const DEFAULT_LOCALE = "en";
-const DEVICE_KEYS = ["iphone", "ipad", "android", "android-7", "android-10", "feature-graphic"];
+const DEVICE_KEYS = ["iphone", "ipad", "tvos", "watchos", "carplay", "android", "android-7", "android-10", "feature-graphic"];
 const LAYOUTS = ["hero", "device-bottom", "device-top", "two-devices", "no-device", "split-landscape", "feature-graphic"];
 
 function readJson(file) {
@@ -333,11 +336,12 @@ Ask the user these. Do not proceed until you have answers:
 
 6. **Target stores** — Apple App Store only, Google Play only, or both? Determines which platform decks to seed.
 7. **iPad / Android tablet screenshots** — If yes, what sizes and orientations?
-8. **Feature Graphic** — Want a 1024×500 Play Store banner too?
-9. **Localized screenshots** — Languages? (e.g. en, de, es, pt, ja, ar, he)
-10. **Number of slides** — Apple allows up to 10, Google Play up to 8.
-11. **Brand colors / font** — If they want a custom theme beyond the built-in presets.
-12. **Additional instructions** — Anything specific.
+8. **Apple TV / Apple Watch / CarPlay** — Does the app have a tvOS or watchOS app, or CarPlay support? Each gets its own deck.
+9. **Feature Graphic** — Want a 1024×500 Play Store banner too?
+10. **Localized screenshots** — Languages? (e.g. en, de, es, pt, ja, ar, he)
+11. **Number of slides** — Apple allows up to 10, Google Play up to 8.
+12. **Brand colors / font** — If they want a custom theme beyond the built-in presets.
+13. **Additional instructions** — Anything specific.
 
 **IMPORTANT:** If the user gives instructions at any point, follow them. They override skill defaults.
 
@@ -379,7 +383,10 @@ public/
 └── screenshots/
     ├── apple/
     │   ├── iphone/{locale}/01.png … N.png
-    │   └── ipad/{locale}/01.png   … N.png
+    │   ├── ipad/{locale}/01.png   … N.png
+    │   ├── tvos/{locale}/01.png   … N.png   # Apple TV, 16:9
+    │   ├── watchos/{locale}/01.png … N.png  # Apple Watch
+    │   └── carplay/{locale}/01.png … N.png  # CarPlay head-unit captures
     └── android/
         ├── phone/{locale}/01.png  … N.png
         ├── tablet-7/{portrait|landscape}/{locale}/...
@@ -585,10 +592,32 @@ Before export, zoom out to inspect the connected canvas as a strip, then inspect
 
 Project locales come from `app-store-screenshots.json` `locales` field — set during scaffolding (Step 4). Single-locale projects produce a flat per-size structure with just the one locale folder.
 
+Each slide is rendered once per locale at canvas resolution and scaled to every export size. The exporter waits until every visible screenshot has actually painted before it saves a PNG (Safari/WebKit decodes images inside the render asynchronously, which used to produce blank device screens), and shows a warning toast naming the screen if one never appears.
+
 If exports come out blank or with black screen rectangles:
+- Read the export toast: a "screenshots may be missing" warning names the affected screens. Export again, and check the source image opens.
 - Verify source screenshots are RGB (not RGBA). The template flattens via `objectFit: cover`, but truly transparent sources can still produce black regions.
 - Confirm the referenced screenshot paths exist under `public/`; export retries paths that were previously missing before it starts rendering.
-- Keep export scaling inside `html-to-image` via `canvasWidth`/`canvasHeight`; CSS `transform: scale(...)` can leave transparent gutters when App Store sizes differ slightly in aspect ratio.
+
+### Apple TV, Apple Watch and CarPlay
+
+Every Apple TV and Apple Watch size below was read from App Store Connect's own metadata (`asc screenshots sizes --all`). Re-derive it the same way if Apple changes the slots.
+
+| Device | Display type | Accepted sizes | Canvas |
+|---|---|---|---|
+| Apple TV | `APP_APPLE_TV` | 3840×2160, 1920×1080 (landscape only) | 3840×2160 |
+| Apple Watch | `APP_WATCH_ULTRA` | 422×514, 410×502 | 422×514 |
+| Apple Watch | `APP_WATCH_SERIES_10` | 416×496 | ↑ |
+| Apple Watch | `APP_WATCH_SERIES_7` | 396×484 | ↑ |
+| Apple Watch | `APP_WATCH_SERIES_4` | 368×448 | ↑ |
+| Apple Watch | `APP_WATCH_SERIES_3` | 312×390 | ↑ |
+| CarPlay | iPhone slots (landscape) | 2868×1320, 2778×1284, 2622×1206, 2436×1125 | 2868×1320 |
+
+- **Every export is a downscale of the canvas.** Where a slot's aspect differs slightly (Watch 422×514 → 312×390), the exporter scales to cover and trims a few edge pixels instead of stretching the frame. Keep text and the device away from the outermost ~3% on the watch.
+- **CarPlay has no App Store screenshot slot.** A CarPlay app ships inside its iPhone app, so a CarPlay shot is uploaded **into the iPhone slot**, in landscape (iPhone slots accept both orientations). The `carplay` device is a head-unit frame on a landscape 6.9" iPhone canvas for exactly that. Head units vary by vehicle; the frame uses Apple's CarPlay Simulator "Standard" 800×480 preset (5:3). Change `CARPLAY_RATIO` in `src/lib/constants.ts` for another preset (Minimum 748×456, Widescreen 1920×720, Portrait 900×1200, Video Playback 1920×1080).
+- **TV, Watch and CarPlay frames are contained.** Phones and tablets deliberately bleed off the canvas edge; a cropped TV, watch face or head unit reads as a mistake, so these devices always stay fully inside the canvas.
+- **Layouts:** `split-landscape` (caption left, device right) is the strongest layout for the wide TV and CarPlay canvases. On the watch, keep headlines to two or three short words per line — the canvas is only 422 px wide.
+- **Screenshots:** use real captures at native resolution — Apple TV 3840×2160 or 1920×1080 from the tvOS simulator, Apple Watch from the watchOS simulator, CarPlay from the CarPlay Simulator (or Xcode's I/O → External Displays → CarPlay).
 
 ## Step 6: Final QA Gate
 
@@ -600,6 +629,7 @@ If exports come out blank or with black screen rectangles:
 ### Visual Quality
 - No two adjacent slides share the same layout
 - Landscape tablet slides use `split-landscape` — never two devices side-by-side
+- Apple TV and CarPlay decks lead with `split-landscape` or `hero`; Watch headlines fit on the 422 px canvas without wrapping mid-phrase
 - At least one contrast (`inverted: true`) slide when the deck is long enough
 - For decks with 5+ slides, either one cross-screen/cross-canvas moment exists or there is a clear reason to keep every screen isolated
 - Cross-screen moments are limited to adjacent screens and never split text, required info, faces, or critical UI
@@ -621,7 +651,8 @@ If exports come out blank or with black screen rectangles:
 | Pasted screenshots into git directly | `public/screenshots/...` is fine to commit. Drop-target uploads are now also written to `public/screenshots/uploaded/<hash>.png` — commit both that folder **and** `app-store-screenshots.json` so collaborators reproduce your deck after `git clone`. |
 | Wrong directory layout for tablet screenshots | See Step 2 — `android/tablet-7/portrait/{locale}/...` etc. |
 | Reset wiped the deck | Reset clears in-memory state and re-saves defaults to `app-store-screenshots.json`. Recover by `git checkout app-store-screenshots.json` if it was committed, or export first before resetting. |
-| Export is blank | Source PNGs probably have alpha — flatten to RGB |
+| Export is blank | Check the export toast for a "may be missing" warning and re-export; otherwise the source PNG probably has alpha — flatten to RGB |
+| Looked for a CarPlay slot in App Store Connect | There isn't one — upload CarPlay shots into the iPhone slot |
 | `bun dev` port collision | Template defaults to `next dev`; let Next pick the next free port (3001+) |
 
 ## Project Migration
@@ -673,7 +704,7 @@ project/
     │   │   ├── inspector.tsx           # Right-pane controls for active slide
     │   │   ├── screenshot-picker.tsx   # File drop + picker
     │   │   ├── slide-canvas.tsx        # Data-driven screen/deck renderer (all layouts)
-    │   │   └── device-frames.tsx       # Phone, AndroidPhone, IPad, tablets
+    │   │   └── device-frames.tsx       # Phone, IPad, AppleTV, AppleWatch, CarPlayScreen, Android
     │   └── ui/                         # Minimal ShadCN primitives (button, select, etc.)
     └── lib/
         ├── constants.ts                # Canvas sizes, export sizes, themes, frame ratios
@@ -681,6 +712,7 @@ project/
         ├── types.ts                    # Slide / ProjectState / Theme types
         ├── storage.ts                  # useProject() — localStorage autosave hook
         ├── image-cache.ts              # preloadImages + img() helper
+        ├── export-render.ts            # Slide → PNG; waits for every screenshot to paint
         └── utils.ts                    # cn() helper
 ```
 
