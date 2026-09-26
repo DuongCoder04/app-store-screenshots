@@ -6,9 +6,9 @@ import { cleanImportedFont } from "./clean-imported-font";
 import { DEFAULT_PROJECT } from "./defaults";
 import { coerceLocalized } from "./locale";
 import { cleanTypography } from "./typography";
-import type { Device, ElementTransform, ImageElement, ProjectState, Slide, TextElement } from "./types";
+import type { Device, ElementTransform, ImageElement, ProjectState, ScreenshotFontId, Slide, TextElement } from "./types";
 
-const HISTORY_LIMIT = 25;
+const HISTORY_LIMIT = 50;
 // Coalesce rapid edits (typing, slider drags) into a single undo step.
 const COALESCE_MS = 500;
 // Debounce file/localStorage writes — frequent enough to feel instant, infrequent enough not to thrash disk.
@@ -82,6 +82,18 @@ function cleanImageElement(value: unknown): ImageElement | undefined {
   };
 }
 
+// Early builds had a "Classic Serif" that rendered exactly like Georgia.
+const LEGACY_FONT_IDS: Record<string, ScreenshotFontId> = { "classic-serif": "template-serif" };
+
+function cleanFontId(value: unknown, hasImportedFont: boolean): ScreenshotFontId {
+  if (typeof value !== "string") return DEFAULT_SCREENSHOT_FONT_ID;
+  const id = LEGACY_FONT_IDS[value] ?? value;
+  if (!Object.prototype.hasOwnProperty.call(SCREENSHOT_FONTS, id)) return DEFAULT_SCREENSHOT_FONT_ID;
+  // "Imported font" without a file behind it would render the fallback.
+  if (id === "self-hosted" && !hasImportedFont) return DEFAULT_SCREENSHOT_FONT_ID;
+  return id as ScreenshotFontId;
+}
+
 // Migrate older projects into the current schema while keeping legacy decks
 // visually stable until they explicitly opt into connected canvas.
 function migrateSlide(slide: Slide): Slide {
@@ -121,11 +133,8 @@ function mergeWithDefaults(parsed: Partial<ProjectState>): ProjectState {
     typeof parsed.themeId === "string" && parsed.themeId.trim()
       ? parsed.themeId
       : DEFAULT_PROJECT.themeId;
-  const fontId =
-    typeof parsed.fontId === "string" && Object.prototype.hasOwnProperty.call(SCREENSHOT_FONTS, parsed.fontId)
-      ? parsed.fontId
-      : DEFAULT_SCREENSHOT_FONT_ID;
   const importedFont = cleanImportedFont(parsed.importedFont);
+  const fontId = cleanFontId(parsed.fontId, !!importedFont);
   const slidesByDevice = parsed.slidesByDevice
     ? Object.fromEntries(
         Object.entries(parsed.slidesByDevice).map(([device, slides]) => [
@@ -294,10 +303,15 @@ export function useProject() {
     };
   }, [state, hydrated, fileReady]);
 
-  const setState = useCallback((updater: Updater) => {
+  // `history: false` is for navigation (device, orientation, locale): it isn't
+  // an edit, so it neither takes an undo step nor clears redo. Undo still
+  // restores the snapshot's device, which takes you to the deck the undone
+  // edit was made on.
+  const setState = useCallback((updater: Updater, options?: { history?: boolean }) => {
     _setState((prev) => {
       const next = applyUpdater(updater, prev);
       if (next === prev) return prev;
+      if (options?.history === false) return next;
       const now = Date.now();
       if (now - lastPushAt.current > COALESCE_MS) {
         pastRef.current.push(prev);

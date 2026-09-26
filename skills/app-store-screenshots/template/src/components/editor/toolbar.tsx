@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { AlertTriangle, Check, Cloud, Download, Redo2, RotateCcw, Undo2, UnfoldHorizontal } from "lucide-react";
+import { AlertTriangle, Check, Cloud, Download, Redo2, RotateCcw, Undo2, UnfoldHorizontal, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,12 +14,14 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DEVICE_LABEL,
+  IMPORTED_FONT_FAMILY,
   PLATFORM_DEVICES,
   SCREENSHOT_FONTS,
   THEMES,
@@ -28,7 +30,9 @@ import {
 } from "@/lib/constants";
 import { detectPlatform } from "@/lib/defaults";
 import type { Device, ImportedFont, Orientation, Platform, ScreenshotFontId, Theme } from "@/lib/types";
-import { FontImporter } from "./font-importer";
+import { FontImporter, type FontImporterHandle } from "./font-importer";
+
+const IMPORT_FONT_ACTION = "__import-font__";
 
 type Props = {
   appName: string;
@@ -82,12 +86,23 @@ export function Toolbar(props: Props) {
   const platformDevices = PLATFORM_DEVICES[platform];
   const activeTheme = themeById(props.themeId);
 
+  const fontImporter = React.useRef<FontImporterHandle>(null);
+  const [importingFont, setImportingFont] = React.useState(false);
+  // "Imported font" is only a choice once a file has actually been imported.
+  const fontIds = (Object.keys(SCREENSHOT_FONTS) as ScreenshotFontId[]).filter(
+    (id) => id !== "self-hosted" || !!props.importedFont,
+  );
+  const fontLabel = (id: ScreenshotFontId) =>
+    id === "self-hosted" && props.importedFont?.name ? props.importedFont.name : SCREENSHOT_FONTS[id].name;
+  const fontPreviewFamily = (id: ScreenshotFontId) =>
+    id === "self-hosted" ? `"${IMPORTED_FONT_FAMILY}", sans-serif` : SCREENSHOT_FONTS[id].family;
+
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b bg-card/40 px-4 py-2">
       <Input
         value={props.appName}
         onChange={(e) => props.setAppName(e.target.value)}
-        className="h-8 w-40 border-dashed text-sm font-semibold focus-visible:border-input focus-visible:border-solid focus-visible:bg-background"
+        className="h-8 w-36 border-dashed text-sm font-semibold focus-visible:border-input focus-visible:border-solid focus-visible:bg-background"
         placeholder="App name"
         aria-label="App name"
         title="App name (click to edit)"
@@ -115,7 +130,7 @@ export function Toolbar(props: Props) {
       </Button>
 
       <Select value={activeTheme.id} onValueChange={props.setThemeId} disabled={props.busy}>
-        <SelectTrigger className="h-8 w-48 text-xs" title="Theme" aria-label="Theme">
+        <SelectTrigger className="h-8 w-40 text-xs" title="Theme" aria-label="Theme">
           <SelectValue>
             <ThemeOption theme={activeTheme} />
           </SelectValue>
@@ -129,19 +144,35 @@ export function Toolbar(props: Props) {
         </SelectContent>
       </Select>
 
-      <Select value={props.fontId} onValueChange={(fontId) => props.setFontId(fontId as ScreenshotFontId)} disabled={props.busy}>
-        <SelectTrigger className="h-8 w-44 text-xs" aria-label="Screenshot font">
-          <SelectValue placeholder="Font" />
+      <Select
+        value={props.fontId}
+        onValueChange={(fontId) => {
+          if (fontId === IMPORT_FONT_ACTION) fontImporter.current?.open();
+          else props.setFontId(fontId as ScreenshotFontId);
+        }}
+        disabled={props.busy || importingFont}
+      >
+        <SelectTrigger className="h-8 w-36 text-xs" title="Screenshot font" aria-label="Screenshot font">
+          <SelectValue placeholder="Font">
+            <span className="truncate">{importingFont ? "Importing font…" : fontLabel(props.fontId)}</span>
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {Object.entries(SCREENSHOT_FONTS).map(([id, font]) => (
-            <SelectItem key={id} value={id}>{font.name}</SelectItem>
+          {fontIds.map((id) => (
+            <SelectItem key={id} value={id}>
+              <span style={{ fontFamily: fontPreviewFamily(id) }}>{fontLabel(id)}</span>
+            </SelectItem>
           ))}
+          <SelectSeparator />
+          <SelectItem value={IMPORT_FONT_ACTION}>
+            <span className="flex items-center gap-1.5">
+              <Upload className="h-3.5 w-3.5" />
+              {props.importedFont ? "Replace imported font…" : "Import font…"}
+            </span>
+          </SelectItem>
         </SelectContent>
       </Select>
-      {props.fontId === "self-hosted" && (
-        <FontImporter disabled={props.busy} importedFont={props.importedFont} onImported={props.setImportedFont} />
-      )}
+      <FontImporter ref={fontImporter} onImported={props.setImportedFont} onUploadingChange={setImportingFont} />
 
       <span aria-hidden className="mx-1 h-5 w-px bg-border" />
 
@@ -173,7 +204,7 @@ export function Toolbar(props: Props) {
           onValueChange={(v) => props.setDevice(v as Device)}
           disabled={props.busy}
         >
-          <SelectTrigger className="h-8 w-44 text-xs">
+          <SelectTrigger className="h-8 w-36 text-xs" aria-label="Device" title="Device">
             <SelectValue placeholder="Device">{deviceLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -190,7 +221,7 @@ export function Toolbar(props: Props) {
           onValueChange={(v) => props.setOrientation(v as Orientation)}
           disabled={props.busy}
         >
-          <SelectTrigger className="h-8 w-32 text-xs">
+          <SelectTrigger className="h-8 w-28 text-xs" aria-label="Orientation">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -202,7 +233,7 @@ export function Toolbar(props: Props) {
 
       {showLocale && (
         <Select value={props.locale} onValueChange={props.setLocale} disabled={props.busy}>
-          <SelectTrigger className="h-8 w-20 text-xs">
+          <SelectTrigger className="h-8 w-20 text-xs" aria-label="Locale">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -340,8 +371,8 @@ function SaveStatus({ savedAt, saveError }: { savedAt: number | null; saveError:
 
   if (!savedAt) {
     return (
-      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Cloud className="h-3.5 w-3.5" /> not saved yet
+      <span className="flex items-center gap-1 text-xs text-muted-foreground" title="Not saved yet">
+        <Cloud className="h-3.5 w-3.5" /> <span className="hidden 2xl:inline">not saved yet</span>
       </span>
     );
   }
@@ -355,8 +386,8 @@ function SaveStatus({ savedAt, saveError }: { savedAt: number | null; saveError:
           ? `saved ${Math.round(seconds / 60)}m ago`
           : `saved ${Math.round(seconds / 3600)}h ago`;
   return (
-    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-      <Check className="h-3.5 w-3.5 text-green-500" /> {label}
+    <span className="flex items-center gap-1 text-xs text-muted-foreground" title={`Project ${label}`}>
+      <Check className="h-3.5 w-3.5 text-green-500" /> <span className="hidden 2xl:inline">{label}</span>
     </span>
   );
 }

@@ -127,7 +127,6 @@ export type ScreenshotFontId =
   | "template-default"
   | "template-serif"
   | "system-sans"
-  | "classic-serif"
   | "avenir-next"
   | "helvetica-neue"
   | "american-typewriter"
@@ -140,6 +139,8 @@ export type ScreenshotFontId =
 export type ImportedFont = {
   src: string;
   format: "woff2" | "woff" | "truetype" | "opentype";
+  /** Display name, taken from the uploaded file name. */
+  name?: string;
 };
 
 export type Theme = {

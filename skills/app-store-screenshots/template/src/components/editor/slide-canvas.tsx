@@ -129,7 +129,6 @@ type Props = {
   appName?: string;
   appIcon?: string;
   fontFamily?: string;
-  fontFaceCss?: string;
   editable?: boolean;
   edit?: EditHandlers;
   selectedElementId?: ElementId | null;
@@ -158,7 +157,6 @@ type DeckCanvasProps = {
   appName?: string;
   appIcon?: string;
   fontFamily?: string;
-  fontFaceCss?: string;
   connectedCanvas?: boolean;
   editable?: boolean;
   edit?: DeckEditHandlers;
@@ -559,7 +557,6 @@ export function SlideCanvas({
   appName,
   appIcon,
   fontFamily,
-  fontFaceCss,
   editable,
   edit,
   selectedElementId = null,
@@ -570,16 +567,18 @@ export function SlideCanvas({
 
   if (slide.layout === "feature-graphic" || device === "feature-graphic") {
     return (
-      <FeatureGraphicCanvas
-        slide={slide}
-        cW={cW}
-        theme={theme}
-        locale={locale}
-        appName={appName}
-        appIcon={appIcon}
-        editable={editable}
-        edit={edit}
-      />
+      <div style={{ width: "100%", height: "100%", fontFamily }}>
+        <FeatureGraphicCanvas
+          slide={slide}
+          cW={cW}
+          theme={theme}
+          locale={locale}
+          appName={appName}
+          appIcon={appIcon}
+          editable={editable}
+          edit={edit}
+        />
+      </div>
     );
   }
 
@@ -600,7 +599,6 @@ export function SlideCanvas({
         fontFamily,
       }}
     >
-      {fontFaceCss && <style>{fontFaceCss}</style>}
       <SlideBackground slide={slide} cW={cW} cH={cH} theme={theme} />
       <SlideElements
         slide={slide}
@@ -633,7 +631,6 @@ export function DeckCanvas({
   appName,
   appIcon,
   fontFamily,
-  fontFaceCss,
   connectedCanvas = true,
   editable,
   edit,
@@ -656,7 +653,6 @@ export function DeckCanvas({
         fontFamily,
       }}
     >
-      {fontFaceCss && <style>{fontFaceCss}</style>}
       {slides.map((slide, index) => {
         const screenX = index * cW;
         const active = activeSlideId === slide.id;
