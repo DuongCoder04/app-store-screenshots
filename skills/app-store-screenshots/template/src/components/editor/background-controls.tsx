@@ -1,4 +1,5 @@
 "use client";
+import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -8,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cleanHexColor } from "@/lib/clean-hex-color";
 import type { Slide, Theme } from "@/lib/types";
 
 type Props = {
@@ -18,7 +20,11 @@ type Props = {
 
 export function BackgroundControls({ slide, theme, onChange }: Props) {
   const mode = slide.backgroundColor ? "custom" : slide.inverted ? "alternate" : "theme";
-  const customColor = slide.backgroundColor || theme.bg;
+  const customColor = cleanHexColor(slide.backgroundColor) || cleanHexColor(theme.bg) || "#FFFFFF";
+  // Keep partial hex input local so typing "#0B" or clearing the field doesn't
+  // write an invalid color into the slide (or drop it out of custom mode).
+  const [draft, setDraft] = React.useState(customColor);
+  React.useEffect(() => setDraft(customColor), [customColor]);
 
   return (
     <div className="space-y-1.5">
@@ -48,8 +54,14 @@ export function BackgroundControls({ slide, theme, onChange }: Props) {
             aria-label="Custom background color"
           />
           <Input
-            value={customColor}
-            onChange={(event) => onChange({ backgroundColor: event.target.value.toUpperCase() })}
+            value={draft}
+            onChange={(event) => {
+              const next = event.target.value.toUpperCase();
+              setDraft(next);
+              const color = cleanHexColor(next);
+              if (color) onChange({ backgroundColor: color });
+            }}
+            onBlur={() => setDraft(customColor)}
             placeholder="#0B0908"
             className="h-8 font-mono text-xs uppercase"
             aria-label="Custom background hex color"
