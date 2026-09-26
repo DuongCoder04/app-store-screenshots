@@ -124,6 +124,7 @@ export type ThemeId =
   | "vintage-travel-poster";
 
 export type ScreenshotFontId =
+  | "template-default"
   | "template-serif"
   | "system-sans"
   | "classic-serif"

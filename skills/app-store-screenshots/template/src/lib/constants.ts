@@ -160,9 +160,15 @@ export function macW(cW: number, cH: number, clamp = 0.86) {
 // ---------- Themes ----------
 export const DEFAULT_THEME_ID: ThemeId = "clean-light";
 
-export const DEFAULT_SCREENSHOT_FONT_ID: ScreenshotFontId = "system-sans";
+export const DEFAULT_SCREENSHOT_FONT_ID: ScreenshotFontId = "template-default";
 
 export const SCREENSHOT_FONTS: Record<ScreenshotFontId, { name: string; family: string }> = {
+  // Inherit the editor's Inter (next/font in app/layout.tsx), which is what the
+  // canvas rendered before fonts were selectable, so existing decks don't shift.
+  "template-default": {
+    name: "Inter (default)",
+    family: "inherit",
+  },
   "template-serif": {
     name: "Editorial Serif",
     family: "Georgia, 'Times New Roman', serif",

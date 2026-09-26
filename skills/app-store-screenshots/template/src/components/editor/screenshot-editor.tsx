@@ -3,6 +3,7 @@ import * as React from "react";
 import JSZip from "jszip";
 import { Toaster, toast } from "sonner";
 import {
+  DEFAULT_SCREENSHOT_FONT_ID,
   getExportSizes,
   hasTheme,
   SCREENSHOT_FONTS,
@@ -46,7 +47,7 @@ export function ScreenshotEditor() {
   const theme = themeById(state.themeId);
   const fontFamily = state.fontId === "self-hosted" && state.importedFont
     ? '"ImportedScreenshotFont", Georgia, serif'
-    : SCREENSHOT_FONTS[state.fontId || "system-sans"].family;
+    : SCREENSHOT_FONTS[state.fontId || DEFAULT_SCREENSHOT_FONT_ID].family;
   const fontFaceCss = state.importedFont
     ? `@font-face { font-family: "ImportedScreenshotFont"; src: url("${state.importedFont.src}") format("${state.importedFont.format}"); font-display: swap; }`
     : undefined;
@@ -432,6 +433,9 @@ export function ScreenshotEditor() {
     // matches what's on screen.
     if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
       try {
+        // fonts.ready only covers faces already requested; explicitly load an
+        // imported font so a not-yet-used face can't export as the fallback.
+        if (state.fontId === "self-hosted") await document.fonts.load(`64px ${fontFamily}`);
         await document.fonts.ready;
       } catch {
         /* ignore */
@@ -585,7 +589,7 @@ export function ScreenshotEditor() {
         setThemeId={(v) => setState((p) => ({ ...p, themeId: v }))}
         connectedCanvas={state.connectedCanvas}
         setConnectedCanvas={(v) => setState((p) => ({ ...p, connectedCanvas: v }))}
-        fontId={state.fontId || "system-sans"}
+        fontId={state.fontId || DEFAULT_SCREENSHOT_FONT_ID}
         setFontId={(v) => setState((p) => ({ ...p, fontId: v }))}
         importedFont={state.importedFont}
         setImportedFont={(importedFont) => setState((p) => ({ ...p, fontId: "self-hosted", importedFont }))}

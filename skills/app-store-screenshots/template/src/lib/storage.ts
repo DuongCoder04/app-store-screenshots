@@ -121,9 +121,10 @@ function mergeWithDefaults(parsed: Partial<ProjectState>): ProjectState {
     typeof parsed.themeId === "string" && parsed.themeId.trim()
       ? parsed.themeId
       : DEFAULT_PROJECT.themeId;
-  const fontId = parsed.fontId && parsed.fontId in SCREENSHOT_FONTS
-    ? parsed.fontId
-    : DEFAULT_SCREENSHOT_FONT_ID;
+  const fontId =
+    typeof parsed.fontId === "string" && Object.prototype.hasOwnProperty.call(SCREENSHOT_FONTS, parsed.fontId)
+      ? parsed.fontId
+      : DEFAULT_SCREENSHOT_FONT_ID;
   const importedFont = cleanImportedFont(parsed.importedFont);
   const slidesByDevice = parsed.slidesByDevice
     ? Object.fromEntries(
