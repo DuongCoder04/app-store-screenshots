@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LAYOUT_HINT, LAYOUT_LABEL } from "@/lib/constants";
 import { COPY_IDEA_SLOTS } from "@/lib/copy-ideas";
 import { nid } from "@/lib/defaults";
+import { img } from "@/lib/image-cache";
 import {
   isBuiltInElementId,
   imageElementKey,
@@ -83,6 +84,8 @@ type Props = {
   locale: string;
   selectedElementId: ElementId | null;
   onChange: (patch: Partial<Slide>) => void;
+  /** Patch computed from the slide's latest state (safe after async work). */
+  onUpdate: (update: (slide: Slide) => Partial<Slide>) => void;
   onSelectElement: (id: ElementId | null) => void;
 };
 
@@ -100,6 +103,7 @@ export function Inspector({
   locale,
   selectedElementId,
   onChange,
+  onUpdate,
   onSelectElement,
 }: Props) {
   const isFeatureGraphic = device === "feature-graphic" || slide.layout === "feature-graphic";
@@ -233,6 +237,7 @@ export function Inspector({
             locale={locale}
             selectedElementId={selectedElementId}
             onChange={onChange}
+            onUpdate={onUpdate}
             onSelectElement={onSelectElement}
           />
         )}
@@ -293,6 +298,7 @@ function ElementTransformControls({
   locale,
   selectedElementId,
   onChange,
+  onUpdate,
   onSelectElement,
 }: {
   slide: Slide;
@@ -301,6 +307,7 @@ function ElementTransformControls({
   locale: string;
   selectedElementId: ElementId | null;
   onChange: (patch: Partial<Slide>) => void;
+  onUpdate: (update: (slide: Slide) => Partial<Slide>) => void;
   onSelectElement: (id: ElementId | null) => void;
 }) {
   const present: ElementId[] = ["caption"];
@@ -345,13 +352,13 @@ function ElementTransformControls({
     }
     if (isImageElementId(id)) {
       const imageId = imageElementKey(id);
-      onChange({
-        imageElements: (slide.imageElements || []).map((element) =>
+      onUpdate((latest) => ({
+        imageElements: (latest.imageElements || []).map((element) =>
           element.id === imageId
             ? { ...element, transform: { ...element.transform, ...patch } }
             : element,
         ),
-      });
+      }));
       return;
     }
     if (!isBuiltInElementId(id)) return;
@@ -380,17 +387,36 @@ function ElementTransformControls({
     onSelectElement(null);
   }
 
+  // Functional updates: an image upload can finish after the user has moved or
+  // resized the overlay, and a patch built from the render-time slide would
+  // silently revert that move.
   function patchImageElement(id: string, patch: Partial<ImageElement>) {
-    onChange({
-      imageElements: (slide.imageElements || []).map((element) =>
+    onUpdate((latest) => ({
+      imageElements: (latest.imageElements || []).map((element) =>
         element.id === id ? { ...element, ...patch } : element,
       ),
-    });
+    }));
+  }
+
+  // The first image picked for an overlay reshapes its frame to the image's
+  // aspect ratio (centred on the old frame), so "Fill frame" doesn't crop a
+  // wide logo into a square. Replacing an image keeps the frame as placed.
+  async function setImageSource(id: string, src: string) {
+    const size = src ? await naturalSize(img(src)) : null;
+    onUpdate((latest) => ({
+      imageElements: (latest.imageElements || []).map((element) => {
+        if (element.id !== id) return element;
+        if (!size || element.src) return { ...element, src };
+        return { ...element, src, transform: fitToAspect(element.transform, size.w / size.h, cH * 0.6) };
+      }),
+    }));
   }
 
   function deleteImageElement(element: ImageElement) {
-    const nextImageElements = (slide.imageElements || []).filter((item) => item.id !== element.id);
-    onChange({ imageElements: nextImageElements.length > 0 ? nextImageElements : undefined });
+    onUpdate((latest) => {
+      const nextImageElements = (latest.imageElements || []).filter((item) => item.id !== element.id);
+      return { imageElements: nextImageElements.length > 0 ? nextImageElements : undefined };
+    });
     onSelectElement(null);
   }
 
@@ -486,35 +512,38 @@ function ElementTransformControls({
 
   return (
     <div className="space-y-3 rounded-md border bg-muted/30 p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
           <Label className="text-xs font-semibold">Elements</Label>
-          <p className="text-[11px] text-muted-foreground">
-            {activeId
-              ? "Fine-tune the selected element's rotation and stacking."
-              : "Click an element on the canvas to fine-tune its rotation and stacking."}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 shrink-0 px-2 text-xs"
+              onClick={addTextElement}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Text
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 shrink-0 px-2 text-xs"
+              onClick={addImageElement}
+              title="Add a PNG or JPG overlay (logo, photo, badge)"
+            >
+              <ImagePlus className="h-3.5 w-3.5" />
+              Image
+            </Button>
+          </div>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 shrink-0 px-2 text-xs"
-          onClick={addTextElement}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Text
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 shrink-0 px-2 text-xs"
-          onClick={addImageElement}
-        >
-          <ImagePlus className="h-3.5 w-3.5" />
-          Image
-        </Button>
+        <p className="text-[11px] text-muted-foreground">
+          {activeId
+            ? "Fine-tune the selected element's rotation and stacking."
+            : "Click an element on the canvas to fine-tune its rotation and stacking."}
+        </p>
       </div>
 
       {activeId ? (
@@ -535,6 +564,9 @@ function ElementTransformControls({
           }}
           onDeleteText={() => {
             if (activeTextElement) deleteTextElement(activeTextElement);
+          }}
+          onImageSource={(src) => {
+            if (activeImageElement) void setImageSource(activeImageElement.id, src);
           }}
           onImagePatch={(patch) => {
             if (activeImageElement) patchImageElement(activeImageElement.id, patch);
@@ -565,6 +597,7 @@ function ActiveElementPanel({
   onTextPatch,
   onDeleteText,
   onImagePatch,
+  onImageSource,
   onDeleteImage,
 }: {
   activeId: ElementId;
@@ -579,6 +612,7 @@ function ActiveElementPanel({
   onTextPatch: (patch: Partial<TextElement>) => void;
   onDeleteText: () => void;
   onImagePatch: (patch: Partial<ImageElement>) => void;
+  onImageSource: (src: string) => void;
   onDeleteImage: () => void;
 }) {
   const engaged = !!transform;
@@ -620,7 +654,9 @@ function ActiveElementPanel({
         />
       )}
 
-      {imageElement && <ImageElementPanel element={imageElement} onPatch={onImagePatch} />}
+      {imageElement && (
+        <ImageElementPanel element={imageElement} onPatch={onImagePatch} onSourceChange={onImageSource} />
+      )}
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
@@ -668,48 +704,49 @@ function ActiveElementPanel({
 function ImageElementPanel({
   element,
   onPatch,
+  onSourceChange,
 }: {
   element: ImageElement;
   onPatch: (patch: Partial<ImageElement>) => void;
+  onSourceChange: (src: string) => void;
 }) {
   return (
-    <div className="space-y-2 rounded border bg-muted/30 p-2">
-      <div className="space-y-1">
-        <Label className="text-[11px] text-muted-foreground">Image</Label>
-        <ScreenshotPicker label="Overlay image" value={element.src} onChange={(src) => onPatch({ src })} />
-      </div>
-      <div className="space-y-1">
-        <Label className="text-[11px] text-muted-foreground">Fit</Label>
-        <Select value={element.fit || "cover"} onValueChange={(fit) => onPatch({ fit: fit as ImageElement["fit"] })}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="cover">Fill frame</SelectItem>
-            <SelectItem value="contain">Keep whole image</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1">
-        <Label className="text-[11px] text-muted-foreground">Edge fade</Label>
-        <Select
-          value={element.fade?.edge || "none"}
-          onValueChange={(edge) =>
-            onPatch({
-              fade:
-                edge === "none"
-                  ? undefined
-                  : { edge: edge as NonNullable<ImageElement["fade"]>["edge"], amount: element.fade?.amount || 35 },
-            })
-          }
-        >
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No fade</SelectItem>
-            <SelectItem value="top">Fade from top</SelectItem>
-            <SelectItem value="bottom">Fade from bottom</SelectItem>
-            <SelectItem value="left">Fade from left</SelectItem>
-            <SelectItem value="right">Fade from right</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-2">
+      <ScreenshotPicker label="Image" value={element.src} onChange={onSourceChange} />
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Fit</Label>
+          <Select value={element.fit || "cover"} onValueChange={(fit) => onPatch({ fit: fit as ImageElement["fit"] })}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Fill frame</SelectItem>
+              <SelectItem value="contain">Whole image</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Edge fade</Label>
+          <Select
+            value={element.fade?.edge || "none"}
+            onValueChange={(edge) =>
+              onPatch({
+                fade:
+                  edge === "none"
+                    ? undefined
+                    : { edge: edge as NonNullable<ImageElement["fade"]>["edge"], amount: element.fade?.amount || 35 },
+              })
+            }
+          >
+            <SelectTrigger className="h-8 text-xs" aria-label="Edge fade"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="top">From top</SelectItem>
+              <SelectItem value="bottom">From bottom</SelectItem>
+              <SelectItem value="left">From left</SelectItem>
+              <SelectItem value="right">From right</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       {element.fade && (
         <div className="space-y-1">
@@ -724,7 +761,7 @@ function ImageElementPanel({
             value={element.fade.amount}
             onChange={(event) => onPatch({ fade: { ...element.fade!, amount: Number(event.target.value) } })}
             className="w-full"
-            aria-label="Image edge fade reach"
+            aria-label="Fade strength"
           />
         </div>
       )}
@@ -1034,6 +1071,33 @@ function ResetButton({
       <RotateCcw />
     </Button>
   );
+}
+
+function naturalSize(src: string): Promise<{ w: number; h: number } | null> {
+  if (!src) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () =>
+      resolve(image.naturalWidth > 0 && image.naturalHeight > 0 ? { w: image.naturalWidth, h: image.naturalHeight } : null);
+    image.onerror = () => resolve(null);
+    image.src = src;
+  });
+}
+
+function fitToAspect(t: ElementTransform, aspect: number, maxHeight: number): ElementTransform {
+  let width = t.width;
+  let height = width / aspect;
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * aspect;
+  }
+  return {
+    ...t,
+    x: t.x + (t.width - width) / 2,
+    y: t.y + (t.height - height) / 2,
+    width,
+    height,
+  };
 }
 
 function elementLabel(id: ElementId): string {
