@@ -402,6 +402,7 @@ If the user provided headlines, edit `app-store-screenshots.json` to set:
 - `themeId` (one of `"clean-light" | "dark-bold" | "warm-editorial" | "ocean-fresh" | "bloom-roast"`, a named style slug such as `"swiss-grid-bold"` when the user picked that style, or add a matching entry to `THEMES` in `src/lib/constants.ts`). Themes may set `accentAlt` for the label color on inverted slides.
 - `connectedCanvas` (`true` for new connected decks; migrated legacy decks should stay `false` until the user opts in)
 - Starter slides per device with the user's `label` + `headline` + screenshot paths
+- Optional per-slide `typography: { labelScale, headlineScale, appNameScale }` (0.5–2, default 1) when one headline is much longer or shorter than the rest of the deck. `appNameScale` only applies to the feature graphic, where `headlineScale` sizes the tagline.
 
 Otherwise, leave the defaults — the user can rewrite copy in the editor.
 

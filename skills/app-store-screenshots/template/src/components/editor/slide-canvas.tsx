@@ -32,6 +32,7 @@ import {
 import { toTextElementId } from "@/lib/elements";
 import { img } from "@/lib/image-cache";
 import { pickText, resolveScreenshot } from "@/lib/locale";
+import { defaultTextElementFontSize, slideFontScales } from "@/lib/typography";
 import {
   AndroidPhone,
   AppleTV,
@@ -251,6 +252,7 @@ function Caption({
 }) {
   const fg = inverted ? theme.fgAlt : theme.fg;
   const accent = inverted ? theme.accentAlt ?? theme.accent : theme.accent;
+  const { labelScale, headlineScale } = slideFontScales(slide);
   // Scale typography off the *shorter* dimension so landscape layouts don't
   // produce headlines so tall they overlap the device frame.
   const unit = Math.min(cW, cH);
@@ -263,10 +265,11 @@ function Caption({
         onFocus={onFocus}
         placeholder="LABEL"
         style={{
-          // Floor keeps the label legible on the 422×514 Apple Watch canvas.
-          fontSize: Math.max(unit * 0.028, 16),
+          // Floor keeps the label legible on the 422×514 Apple Watch canvas;
+          // the per-slide scale is applied on top of the floored base.
+          fontSize: Math.max(unit * 0.028, 16) * labelScale,
           fontWeight: 600,
-          letterSpacing: Math.max(unit * 0.0015, 0.8),
+          letterSpacing: Math.max(unit * 0.0015, 0.8) * labelScale,
           color: accent,
           textTransform: "uppercase",
           marginBottom: unit * 0.018,
@@ -281,10 +284,10 @@ function Caption({
         onFocus={onFocus}
         placeholder="Headline goes here"
         style={{
-          fontSize: unit * 0.092,
+          fontSize: unit * 0.092 * headlineScale,
           fontWeight: 700,
           lineHeight: 0.96,
-          letterSpacing: -unit * 0.001,
+          letterSpacing: -unit * 0.001 * headlineScale,
           color: fg,
         }}
       />
@@ -839,6 +842,7 @@ function FeatureGraphicCanvas({
   editable?: boolean;
   edit?: EditHandlers;
 }) {
+  const { headlineScale, appNameScale } = slideFontScales(slide);
   return (
     <div
       style={{
@@ -888,14 +892,14 @@ function FeatureGraphicCanvas({
           </div>
         )}
         <div>
-          <div style={{ fontSize: cW * 0.06, fontWeight: 800, lineHeight: 1.05 }}>{appName || "App"}</div>
+          <div style={{ fontSize: cW * 0.06 * appNameScale, fontWeight: 800, lineHeight: 1.05 }}>{appName || "App"}</div>
           <EditableText
             value={pickText(slide.headline, locale)}
             editable={editable}
             multiline
             onChange={edit?.onHeadlineChange}
             style={{
-              fontSize: cW * 0.028,
+              fontSize: cW * 0.028 * headlineScale,
               color: "rgba(255,255,255,0.85)",
               marginTop: cW * 0.012,
               lineHeight: 1.25,
@@ -1095,7 +1099,7 @@ function SlideElements({
             style={{
               width: "100%",
               color: textColor,
-              fontSize: textElement.fontSize ?? Math.min(cW, cH) * 0.06,
+              fontSize: textElement.fontSize ?? defaultTextElementFontSize(cW, cH),
               fontWeight: textElement.fontWeight ?? 700,
               lineHeight: 1.05,
               textAlign: textElement.align ?? "center",

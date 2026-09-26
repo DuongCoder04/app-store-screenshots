@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Lightbulb,
   Plus,
+  RotateCcw,
   RotateCw,
   Trash2,
   Type,
@@ -43,6 +44,16 @@ import {
   toTextElementId,
 } from "@/lib/elements";
 import { pickText, writeLocalized } from "@/lib/locale";
+import { cn } from "@/lib/utils";
+import {
+  cleanTypography,
+  defaultTextElementFontSize,
+  FONT_SCALE_DEFAULT,
+  FONT_SCALE_MAX,
+  FONT_SCALE_MIN,
+  slideFontScales,
+  textElementFontSizeRange,
+} from "@/lib/typography";
 import type {
   BuiltInElementId,
   Device,
@@ -51,6 +62,7 @@ import type {
   Orientation,
   Slide,
   SlideLayout,
+  SlideTypography,
   TextElement,
 } from "@/lib/types";
 import { ScreenshotPicker } from "./screenshot-picker";
@@ -174,6 +186,8 @@ export function Inspector({
           />
         </div>
 
+        <TypographySection slide={slide} isFeatureGraphic={isFeatureGraphic} onChange={onChange} />
+
         {!isFeatureGraphic && !isNoDevice && (
           <div className="space-y-1.5">
             <Label className="text-xs">
@@ -289,6 +303,7 @@ function ElementTransformControls({
   const activeTransform = activeId
     ? getElementTransform(slide, device, orientation, activeId)
     : undefined;
+  const { cW, cH } = getCanvas(device, orientation);
   const activeTextElement =
     activeId && isTextElementId(activeId)
       ? slide.textElements?.find((element) => element.id === textElementKey(activeId))
@@ -339,7 +354,6 @@ function ElementTransformControls({
   }
 
   function addTextElement() {
-    const { cW, cH } = getCanvas(device, orientation);
     const id = nid();
     const zIndex =
       Math.max(
@@ -357,7 +371,6 @@ function ElementTransformControls({
         rotation: 0,
         zIndex,
       },
-      fontSize: Math.round(Math.min(cW, cH) * 0.065),
       fontWeight: 800,
       align: "center",
     };
@@ -430,6 +443,7 @@ function ElementTransformControls({
           transform={activeTransform}
           textElement={activeTextElement || undefined}
           locale={locale}
+          canvas={{ cW, cH }}
           onRotate={(rotation) => patchElement(activeId, { rotation })}
           onReorder={(dir) => reorder(activeId, dir)}
           onTextChange={(value) => {
@@ -456,6 +470,7 @@ function ActiveElementPanel({
   transform,
   textElement,
   locale,
+  canvas,
   onRotate,
   onReorder,
   onTextChange,
@@ -466,6 +481,7 @@ function ActiveElementPanel({
   transform: ElementTransform | undefined;
   textElement?: TextElement;
   locale: string;
+  canvas: { cW: number; cH: number };
   onRotate: (rotation: number) => void;
   onReorder: (dir: "front" | "back" | "up" | "down") => void;
   onTextChange: (value: string) => void;
@@ -501,8 +517,10 @@ function ActiveElementPanel({
 
       {textElement && (
         <TextElementPanel
+          key={textElement.id}
           element={textElement}
           locale={locale}
+          canvas={canvas}
           onTextChange={onTextChange}
           onTextPatch={onTextPatch}
         />
@@ -554,15 +572,40 @@ function ActiveElementPanel({
 function TextElementPanel({
   element,
   locale,
+  canvas,
   onTextChange,
   onTextPatch,
 }: {
   element: TextElement;
   locale: string;
+  canvas: { cW: number; cH: number };
   onTextChange: (value: string) => void;
   onTextPatch: (patch: Partial<TextElement>) => void;
 }) {
   const text = element.text?.[locale] ?? pickText(element.text, locale);
+  const align = element.align ?? "center";
+  const defaultSize = defaultTextElementFontSize(canvas.cW, canvas.cH);
+  const range = textElementFontSizeRange(canvas.cW, canvas.cH);
+  const hasCustomSize = typeof element.fontSize === "number" && Number.isFinite(element.fontSize);
+  // Mirror the canvas: an unset size renders at the canvas-relative default.
+  const size = Math.round(hasCustomSize ? (element.fontSize as number) : defaultSize);
+  // Keep a value loaded from an older project reachable even if it sits
+  // outside the canvas-relative range.
+  const sliderMin = Math.min(range.min, size);
+  const sliderMax = Math.max(range.max, size);
+  // Typing is buffered so intermediate values ("1" on the way to "120") don't
+  // get clamped mid-keystroke; the value is committed on blur / Enter.
+  const [draft, setDraft] = React.useState<string | null>(null);
+
+  function commitDraft() {
+    if (draft === null) return;
+    const n = Number(draft);
+    if (draft.trim() !== "" && Number.isFinite(n)) {
+      onTextPatch({ fontSize: Math.min(range.max, Math.max(range.min, Math.round(n))) });
+    }
+    setDraft(null);
+  }
+
   return (
     <div className="space-y-2 rounded border bg-muted/30 p-2">
       <div className="space-y-1">
@@ -574,49 +617,91 @@ function TextElementPanel({
           placeholder="Overlay text"
         />
       </div>
-      <div className="grid grid-cols-[1fr_76px] gap-2">
-        <div className="space-y-1">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
           <Label className="text-[11px] text-muted-foreground">Size</Label>
-          <Input
-            type="number"
-            min={12}
-            max={400}
-            value={Math.round(element.fontSize || 72)}
-            onChange={(event) => onTextPatch({ fontSize: Number(event.target.value) || 72 })}
+          <ResetButton
+            visible={hasCustomSize && size !== defaultSize}
+            label={`Reset size to ${defaultSize}px`}
+            onClick={() => onTextPatch({ fontSize: undefined })}
           />
         </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={sliderMin}
+            max={sliderMax}
+            step={1}
+            value={size}
+            onChange={(event) => onTextPatch({ fontSize: Number(event.target.value) })}
+            onDoubleClick={() => onTextPatch({ fontSize: undefined })}
+            className="min-w-0 flex-1"
+            aria-label="Text size"
+          />
+          <div className="relative w-[76px] shrink-0">
+            <Input
+              type="number"
+              min={range.min}
+              max={range.max}
+              value={draft ?? String(size)}
+              onChange={(event) => setDraft(event.target.value)}
+              onBlur={commitDraft}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur();
+                if (event.key === "Escape") {
+                  setDraft(null);
+                  event.currentTarget.blur();
+                }
+              }}
+              className="h-8 pr-7 text-xs tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              aria-label="Text size in pixels"
+            />
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
+              px
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-[76px_1fr] gap-2">
         <div className="space-y-1">
           <Label className="text-[11px] text-muted-foreground">Color</Label>
           <Input
             type="color"
             value={element.color || "#171717"}
-            className="h-9 p-1"
+            className="h-7 cursor-pointer p-0.5"
             onChange={(event) => onTextPatch({ color: event.target.value })}
+            aria-label="Text color"
           />
         </div>
-      </div>
-      <div className="grid grid-cols-3 gap-1">
-        <LayerButton
-          disabled={false}
-          onClick={() => onTextPatch({ align: "left" })}
-          label="Align left"
-        >
-          <AlignLeft className="h-3.5 w-3.5" />
-        </LayerButton>
-        <LayerButton
-          disabled={false}
-          onClick={() => onTextPatch({ align: "center" })}
-          label="Align center"
-        >
-          <AlignCenter className="h-3.5 w-3.5" />
-        </LayerButton>
-        <LayerButton
-          disabled={false}
-          onClick={() => onTextPatch({ align: "right" })}
-          label="Align right"
-        >
-          <AlignRight className="h-3.5 w-3.5" />
-        </LayerButton>
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Align</Label>
+          <div className="grid grid-cols-3 gap-1">
+            <LayerButton
+              disabled={false}
+              active={align === "left"}
+              onClick={() => onTextPatch({ align: "left" })}
+              label="Align left"
+            >
+              <AlignLeft className="h-3.5 w-3.5" />
+            </LayerButton>
+            <LayerButton
+              disabled={false}
+              active={align === "center"}
+              onClick={() => onTextPatch({ align: "center" })}
+              label="Align center"
+            >
+              <AlignCenter className="h-3.5 w-3.5" />
+            </LayerButton>
+            <LayerButton
+              disabled={false}
+              active={align === "right"}
+              onClick={() => onTextPatch({ align: "right" })}
+              label="Align right"
+            >
+              <AlignRight className="h-3.5 w-3.5" />
+            </LayerButton>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -624,11 +709,13 @@ function TextElementPanel({
 
 function LayerButton({
   disabled,
+  active,
   onClick,
   label,
   children,
 }: {
   disabled: boolean;
+  active?: boolean;
   onClick: () => void;
   label: string;
   children: React.ReactNode;
@@ -638,13 +725,150 @@ function LayerButton({
       type="button"
       variant="outline"
       size="sm"
-      className="h-7 px-0"
+      className={cn("h-7 px-0", active && "border-foreground/40 bg-accent text-accent-foreground")}
       disabled={disabled}
+      aria-pressed={active}
       onClick={onClick}
       title={label}
       aria-label={label}
     >
       {children}
+    </Button>
+  );
+}
+
+function TypographySection({
+  slide,
+  isFeatureGraphic,
+  onChange,
+}: {
+  slide: Slide;
+  isFeatureGraphic: boolean;
+  onChange: (patch: Partial<Slide>) => void;
+}) {
+  const scales = slideFontScales(slide);
+  const customized = !!cleanTypography(slide.typography);
+
+  function patchTypography(patch: Partial<SlideTypography>) {
+    onChange({
+      typography: cleanTypography({ ...slide.typography, ...patch }),
+    });
+  }
+
+  return (
+    <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <Label className="text-xs font-semibold">Text size</Label>
+          <p className="text-[11px] text-muted-foreground">
+            Relative to the layout default.
+          </p>
+        </div>
+        {customized && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 shrink-0 gap-1 px-1.5 text-[11px] text-muted-foreground"
+            onClick={() => onChange({ typography: undefined })}
+            title="Reset all text sizes to 100%"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset
+          </Button>
+        )}
+      </div>
+      {!isFeatureGraphic && (
+        <FontScaleSlider
+          label="Label"
+          value={scales.labelScale}
+          onChange={(value) => patchTypography({ labelScale: value })}
+        />
+      )}
+      {isFeatureGraphic && (
+        <FontScaleSlider
+          label="App name"
+          value={scales.appNameScale}
+          onChange={(value) => patchTypography({ appNameScale: value })}
+        />
+      )}
+      <FontScaleSlider
+        label={isFeatureGraphic ? "Tagline" : "Headline"}
+        value={scales.headlineScale}
+        onChange={(value) => patchTypography({ headlineScale: value })}
+      />
+    </div>
+  );
+}
+
+function FontScaleSlider({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const pct = Math.round(value * 100);
+  const minPct = Math.round(FONT_SCALE_MIN * 100);
+  const maxPct = Math.round(FONT_SCALE_MAX * 100);
+  const defaultPct = Math.round(FONT_SCALE_DEFAULT * 100);
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-[11px] text-muted-foreground">{label}</Label>
+        <div className="flex items-center gap-1">
+          <ResetButton
+            visible={pct !== defaultPct}
+            label={`Reset ${label.toLowerCase()} to ${defaultPct}%`}
+            onClick={() => onChange(FONT_SCALE_DEFAULT)}
+          />
+          <span className="w-9 text-right text-[11px] tabular-nums text-muted-foreground">{pct}%</span>
+        </div>
+      </div>
+      <input
+        type="range"
+        min={minPct}
+        max={maxPct}
+        step={5}
+        value={pct}
+        onChange={(event) => onChange(Number(event.target.value) / 100)}
+        onDoubleClick={() => onChange(FONT_SCALE_DEFAULT)}
+        className="w-full"
+        aria-label={`${label} size`}
+        aria-valuetext={`${pct}%`}
+        title="Double-click to reset"
+      />
+    </div>
+  );
+}
+
+/** Small inline reset affordance. Always occupies its slot so the row doesn't
+ * shift when it appears. */
+function ResetButton({
+  visible,
+  label,
+  onClick,
+}: {
+  visible: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className={cn("h-5 w-5 text-muted-foreground [&_svg]:size-3", !visible && "invisible")}
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      tabIndex={visible ? 0 : -1}
+      aria-hidden={!visible}
+    >
+      <RotateCcw />
     </Button>
   );
 }
