@@ -10,9 +10,9 @@ export const CANVAS: Record<Device, { w: number; h: number; wL?: number; hL?: nu
   // smaller size is a downscale rather than an upscale.
   watchos:       { w: 422, h: 514 },
   // CarPlay has NO App Store screenshot slot of its own - see EXPORT_SIZES below.
-  // The canvas is therefore the iPhone canvas, because that is where a CarPlay
-  // shot is actually submitted.
-  carplay:       { w: 1320, h: 2868 },
+  // It is submitted in an iPhone slot, which accepts landscape, so the canvas is
+  // the 6.9" iPhone size turned sideways to fit a wide head unit.
+  carplay:       { w: 2868, h: 1320 },
   android:       { w: 1080, h: 1920 },
   "android-7":   { w: 1200, h: 1920, wL: 1920, hL: 1200 },
   "android-10":  { w: 1600, h: 2560, wL: 2560, hL: 1600 },
@@ -54,12 +54,13 @@ export const EXPORT_SIZES: Record<Device, ExportSize[]> = {
   // metadata, not documentation: `asc screenshots sizes --all` lists APPLE_TV,
   // VISION_PRO, DESKTOP, IPAD*, IPHONE*, WATCH* and nothing for CarPlay. A CarPlay
   // app ships inside its iPhone app, so a CarPlay shot is submitted in an iPhone
-  // slot. These are therefore the iPhone sizes on purpose.
+  // slot. These are therefore the iPhone sizes on purpose, in landscape (every
+  // iPhone slot accepts both orientations).
   carplay: [
-    { label: '6.9"', w: 1320, h: 2868 },
-    { label: '6.5"', w: 1284, h: 2778 },
-    { label: '6.3"', w: 1206, h: 2622 },
-    { label: '6.1"', w: 1125, h: 2436 },
+    { label: '6.9" landscape', w: 2868, h: 1320 },
+    { label: '6.5" landscape', w: 2778, h: 1284 },
+    { label: '6.3" landscape', w: 2622, h: 1206 },
+    { label: '6.1" landscape', w: 2436, h: 1125 },
   ],
   android:       [{ label: "Phone",          w: 1080, h: 1920 }],
   "android-7":   [{ label: '7" Portrait',    w: 1200, h: 1920 }],
@@ -130,8 +131,9 @@ export function tvW(cW: number, cH: number, clamp = 0.58) {
 export function watchW(cW: number, cH: number, clamp = 0.52) {
   return Math.min(clamp, 0.72 * (cH / cW) * WATCH_RATIO);
 }
+// Height-bound on the wide canvas: the head unit must clear the caption block.
 export function carPlayW(cW: number, cH: number, clamp = 0.86) {
-  return Math.min(clamp, 0.72 * (cH / cW) * CARPLAY_RATIO);
+  return Math.min(clamp, 0.58 * (cH / cW) * CARPLAY_RATIO);
 }
 
 // ---------- Themes ----------

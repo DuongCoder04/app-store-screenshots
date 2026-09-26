@@ -276,22 +276,33 @@ export function IPad({ src, alt = "", style, hideEmpty }: FrameProps) {
 }
 
 function EmptySlot() {
+  // Sized off the slot's own width (container query units) so the hint stays
+  // readable on a 4K TV canvas and still fits inside a 422 px watch face.
   return (
     <div
       style={{
         width: "100%",
         height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "rgba(255,255,255,0.4)",
-        fontSize: "min(2vw, 14px)",
+        containerType: "inline-size",
         background: "linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)",
-        textAlign: "center",
-        padding: "4%",
       }}
     >
-      Drop a screenshot here
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(255,255,255,0.4)",
+          fontSize: "6cqw",
+          textAlign: "center",
+          padding: "8%",
+          boxSizing: "border-box",
+        }}
+      >
+        Drop a screenshot here
+      </div>
     </div>
   );
 }

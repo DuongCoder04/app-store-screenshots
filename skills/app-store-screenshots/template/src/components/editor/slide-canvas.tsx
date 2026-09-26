@@ -263,9 +263,10 @@ function Caption({
         onFocus={onFocus}
         placeholder="LABEL"
         style={{
-          fontSize: unit * 0.028,
+          // Floor keeps the label legible on the 422×514 Apple Watch canvas.
+          fontSize: Math.max(unit * 0.028, 16),
           fontWeight: 600,
-          letterSpacing: unit * 0.0015,
+          letterSpacing: Math.max(unit * 0.0015, 0.8),
           color: accent,
           textTransform: "uppercase",
           marginBottom: unit * 0.018,
@@ -365,9 +366,8 @@ function getDefaultRects(
   fwFrac: number,
   fwSmallFrac: number,
   // Phones and tablets are deliberately hung past the canvas edge so they bleed off
-  // it. A landscape device must not be cropped - a clipped television or head unit
-  // reads as a mistake, not a design. When true, every device rect stays fully
-  // inside the canvas.
+  // it. When true (TV, watch, CarPlay), every device rect stays fully inside the
+  // canvas instead.
   contain = false,
 ): LayoutRects {
   const deviceW = fwFrac * cW;
@@ -434,7 +434,11 @@ function getDefaultRects(
           align: "center",
         },
       };
-    case "split-landscape":
+    case "split-landscape": {
+      // Contained devices sit beside the caption instead of sliding under it.
+      // The caption is beside it, not above, so it can be taller than elsewhere.
+      const splitW = contain ? Math.min(cW * 0.5, cH * 0.84 * frameAspect) : deviceW;
+      const splitH = splitW / frameAspect;
       return {
         caption: {
           x: cW * 0.05,
@@ -444,12 +448,13 @@ function getDefaultRects(
           align: "left",
         },
         device: {
-          x: contain ? cW - deviceW - cW * 0.04 : cW - deviceW + cW * 0.03,
-          y: (cH - deviceH) / 2,
-          width: deviceW,
-          height: deviceH,
+          x: contain ? cW - splitW - cW * 0.05 : cW - deviceW + cW * 0.03,
+          y: (cH - splitH) / 2,
+          width: splitW,
+          height: splitH,
         },
       };
+    }
     default:
       return {};
   }
@@ -473,6 +478,10 @@ function rectFor(
   };
 }
 
+// Devices whose frame must never be cropped by the canvas edge. A clipped TV,
+// head unit or watch face reads as a mistake, not as a deliberate bleed.
+const CONTAINED_DEVICES: ReadonlySet<Device> = new Set<Device>(["tvos", "watchos", "carplay"]);
+
 function getSlideGeometry(slide: Slide, device: Device, orientation: Orientation) {
   const { cW, cH } = getCanvas(device, orientation);
   const { Comp: Frame, widthFn, smallWidthFn } = getFrameForDevice(device, orientation);
@@ -481,7 +490,7 @@ function getSlideGeometry(slide: Slide, device: Device, orientation: Orientation
   const fwSmallFrac = smallWidthFn(cW, cH);
   const defaults = getDefaultRects(
     slide.layout, cW, cH, frameAspect, fwFrac, fwSmallFrac,
-    device === "tvos" || device === "carplay",
+    CONTAINED_DEVICES.has(device),
   );
   return { cW, cH, Frame, frameAspect, defaults };
 }
