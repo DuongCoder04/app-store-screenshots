@@ -26,7 +26,7 @@ Supported devices out of the box:
 - **Apple TV** (landscape, 4K + HD) — Apple App Store
 - **Apple Watch** (portrait, every Ultra/Series size) — Apple App Store
 - **CarPlay** (landscape head unit) — uploaded into the **iPhone** slot; see "Apple TV, Apple Watch and CarPlay" under Step 5
-- **Mac** (16:10) — Mac App Store (`2880×1800`, `2560×1600`, `1440×900`, `1280×800`)
+- **Mac** (16:10 landscape, own **Mac** tab) — Mac App Store (`2880×1800`, `2560×1600`, `1440×900`, `1280×800`); see "Mac" under Step 5
 - **Android Phone** (portrait) — Google Play
 - **Android Tablet 7"** (portrait + landscape) — Google Play
 - **Android Tablet 10"** (portrait + landscape) — Google Play
@@ -587,7 +587,7 @@ The editor stores headlines and labels per-locale on each slide — switch to a 
 
 ## Step 5: Export Time
 
-Inside the editor, the user picks a device, then hits **Export bundle**. A single zip downloads with every required size × every project locale for that device, organized as `<platform>/<device>/<WxH>/<locale>/NN-<layout>.png`. Repeat per device.
+Inside the editor, the user picks a device, then hits **Export bundle**. A single zip downloads with every required size × every project locale for that device, organized as `<platform>/<device>/<WxH>/<locale>/NN-<layout>.png` (e.g. `ios/iphone/1320x2868/en/01-hero.png`, `macos/mac/2880x1800/en/01-hero.png`). Repeat per device.
 
 When `connectedCanvas` is enabled, exports are crops of the connected canvas, not isolated screen renders. If a mockup sits halfway across screen 2 and screen 3, screen 2's PNG contains its left crop and screen 3's PNG contains its right crop exactly as placed. Legacy decks should start with `connectedCanvas: false`, including Step 0 migrations, so old offscreen/clipped elements export as they did before. The user can turn on **Connected** after intentionally composing cross-screen elements.
 
@@ -622,6 +622,17 @@ Every Apple TV and Apple Watch size below was read from App Store Connect's own 
 - **Layouts:** `split-landscape` (caption left, device right) is the strongest layout for the wide TV and CarPlay canvases. On the watch, keep headlines to two or three short words per line — the canvas is only 422 px wide.
 - **Screenshots:** use real captures at native resolution — Apple TV 3840×2160 or 1920×1080 from the tvOS simulator, Apple Watch from the watchOS simulator, CarPlay from the CarPlay Simulator (or Xcode's I/O → External Displays → CarPlay).
 
+### Mac
+
+| Device | Display type | Accepted sizes | Canvas |
+|---|---|---|---|
+| Mac | `APP_DESKTOP` | 2880×1800, 2560×1600, 1440×900, 1280×800 (16:10 landscape only) | 2880×1800 |
+
+- **Mac is its own toolbar tab** (iOS / Mac / Android), not a device under iOS: App Store Connect lists macOS as a separate platform with its own screenshot set, so the Mac bundle exports to `macos/mac/<WxH>/<locale>/` rather than inside `ios/`. Every Mac size is an exact 16:10 downscale of the canvas; nothing is trimmed.
+- **The Mac window is contained** like the TV and CarPlay frames, and its content area below the title bar is exactly 16:10, so a full-screen 16:10 capture fills it without cropping. Other aspects are cover-cropped from the bottom (the top of the window stays visible).
+- **Screenshots:** a full-screen capture (⌘⇧3) at a 16:10 resolution is the cleanest source. Notched MacBook Pros capture at ~1.54:1, which loses a few percent off the bottom (the Dock). A single-window capture (⌘⇧4, then Space) already has its own title bar, so the frame would draw a second one: crop the window's title bar off first, or use a full-screen capture.
+- **Layouts:** the starter deck is `hero` → `split-landscape` → `device-top` (inverted) → `two-devices` → `no-device`. Because the window is contained, `hero` and `device-bottom` look almost the same; prefer `split-landscape` or `two-devices` (two overlapping windows) for variety.
+
 ## Step 6: Final QA Gate
 
 ### Message Quality
@@ -631,8 +642,8 @@ Every Apple TV and Apple Watch size below was read from App Store Connect's own 
 
 ### Visual Quality
 - No two adjacent slides share the same layout
-- Landscape tablet and Mac slides use `split-landscape` — never two devices side-by-side
-- Apple TV and CarPlay decks lead with `split-landscape` or `hero`; Watch headlines fit on the 422 px canvas without wrapping mid-phrase
+- Landscape tablet slides use `split-landscape` — never two devices side-by-side
+- Apple TV, CarPlay and Mac decks lead with `split-landscape` or `hero`; Watch headlines fit on the 422 px canvas without wrapping mid-phrase
 - At least one contrast (`inverted: true`) slide when the deck is long enough
 - For decks with 5+ slides, either one cross-screen/cross-canvas moment exists or there is a clear reason to keep every screen isolated
 - Cross-screen moments are limited to adjacent screens and never split text, required info, faces, or critical UI
@@ -656,6 +667,7 @@ Every Apple TV and Apple Watch size below was read from App Store Connect's own 
 | Reset wiped the deck | Reset clears in-memory state and re-saves defaults to `app-store-screenshots.json`. Recover by `git checkout app-store-screenshots.json` if it was committed, or export first before resetting. |
 | Export is blank | Check the export toast for a "may be missing" warning and re-export; otherwise the source PNG probably has alpha — flatten to RGB |
 | Looked for a CarPlay slot in App Store Connect | There isn't one — upload CarPlay shots into the iPhone slot |
+| Mac window shows two title bars | The source is a single-window capture with its own title bar — crop it off or use a full-screen 16:10 capture |
 | `bun dev` port collision | Template defaults to `next dev`; let Next pick the next free port (3001+) |
 
 ## Project Migration
@@ -707,7 +719,7 @@ project/
     │   │   ├── inspector.tsx           # Right-pane controls for active slide
     │   │   ├── screenshot-picker.tsx   # File drop + picker
     │   │   ├── slide-canvas.tsx        # Data-driven screen/deck renderer (all layouts)
-    │   │   └── device-frames.tsx       # Phone, IPad, AppleTV, AppleWatch, CarPlayScreen, Android
+    │   │   └── device-frames.tsx       # Phone, IPad, AppleTV, AppleWatch, CarPlayScreen, MacWindow, Android
     │   └── ui/                         # Minimal ShadCN primitives (button, select, etc.)
     └── lib/
         ├── constants.ts                # Canvas sizes, export sizes, themes, frame ratios

@@ -26,8 +26,8 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - **Screen sidebar** - add, select, and drag-to-reorder screens with live thumbnails.
 - **Inspector** - edit layout, labels, headlines, screenshots, element stacking, and transforms from the right panel. A **Copy ideas** menu next to the headline drops in a proven formula to rewrite.
 - **Theme picker** - switch palette presets from the toolbar, including one preset per named style.
-- **Platform switcher** - keep iOS, Mac, and Android decks side by side while sharing the same editor workflow.
-- **Device selector** - design for iPhone, iPad, Apple TV, Apple Watch, CarPlay, Mac, Android phone, Android tablets, and feature graphic formats.
+- **Platform switcher** - iOS, Mac, and Android tabs keep every deck side by side while sharing the same editor workflow.
+- **Device selector** - iPhone, iPad, Apple TV, Apple Watch, and CarPlay under iOS; Android phone, Android tablets, and the feature graphic under Android. The Mac tab is a single 16:10 Mac deck.
 - **Autosave** - writes to disk through `/api/project` and mirrors to `localStorage` for instant reloads.
 - **Export bundle** - downloads a zip organized by platform, device, resolution, and locale.
 
@@ -189,12 +189,11 @@ App Store Connect has no CarPlay screenshot slot: CarPlay shots are uploaded int
 
 ### Mac App Store
 
-| Display | Resolution |
-|---------|------------|
-| 2880 × 1800 | 2880 x 1800 |
-| 2560 × 1600 | 2560 x 1600 |
-| 1440 × 900 | 1440 x 900 |
-| 1280 × 800 | 1280 x 800 |
+| Device | Resolution |
+|--------|------------|
+| Mac (16:10) | 2880 x 1800, 2560 x 1600, 1440 x 900, 1280 x 800 |
+
+Mac has its own **Mac** tab because App Store Connect lists macOS as a separate platform from the iOS app. Its bundle exports to `macos/mac/<WxH>/<locale>/`, next to `ios/...` and `android/...`. The Mac window frame has a 16:10 content area, so a full-screen 16:10 capture fills it without cropping.
 
 ### Google Play Store
 
