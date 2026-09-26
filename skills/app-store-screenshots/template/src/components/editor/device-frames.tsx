@@ -16,9 +16,12 @@ export function Phone({ src, alt = "", style, hideEmpty }: FrameProps) {
   const resolved = img(src);
   return (
     <div style={{ position: "relative", aspectRatio: "1022 / 2082", ...style }}>
+      {/* The screen layer covers the bezel's centre, so the exporter checks the
+          whole mockup (its visible bezel) rather than its hidden middle. */}
       <img
         src={img("/mockup.png")}
         alt=""
+        data-export-check="full"
         style={{ display: "block", width: "100%", height: "100%" }}
         draggable={false}
       />
