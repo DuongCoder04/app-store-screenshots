@@ -1144,22 +1144,31 @@ function SlideElements({
     const rotation = rect.rotation ?? 0;
     const zIndex = rect.zIndex ?? 5 + index;
     return (
-      <ImageElementCanvas
+      <Movable
         key={imageElement.id}
-        element={imageElement}
         rect={toGlobal(rect)}
+        boundsW={boundsW}
+        boundsH={boundsH}
         editable={editable}
         previewScale={previewScale}
-        selected={selectedElementId === elementId}
-        allowOverflow={allowCrossScreen}
-        onChange={(transform) =>
+        rotation={rotation}
+        onChange={(t) =>
           edit?.onElementChange?.(
             elementId,
-            toLocal({ ...transform, rotation: transform.rotation ?? rotation, zIndex: transform.zIndex ?? zIndex }),
+            toLocal({
+              ...t,
+              rotation: t.rotation ?? rotation,
+              zIndex: t.zIndex ?? zIndex,
+            }),
           )
         }
+        zIndex={zIndex}
+        selected={selectedElementId === elementId}
         onSelect={() => edit?.onSelectElement?.(elementId)}
-      />
+        allowOverflow={allowCrossScreen}
+      >
+        <ImageElementCanvas element={imageElement} editable={editable} />
+      </Movable>
     );
   }
 
