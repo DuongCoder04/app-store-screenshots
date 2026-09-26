@@ -143,8 +143,10 @@ export function watchW(cW: number, cH: number, clamp = 0.52) {
 export function carPlayW(cW: number, cH: number, clamp = 0.86) {
   return Math.min(clamp, 0.58 * (cH / cW) * CARPLAY_RATIO);
 }
+// A 16:10 window on a 16:10 canvas: keep it to ~62% of the canvas height so
+// the caption above/below (and beside, in split-landscape) stays clear.
 export function macW(cW: number, cH: number, clamp = 0.86) {
-  return Math.min(clamp, 0.82 * (cH / cW) * MAC_RATIO);
+  return Math.min(clamp, 0.62 * (cH / cW) * MAC_RATIO);
 }
 
 // ---------- Themes ----------
