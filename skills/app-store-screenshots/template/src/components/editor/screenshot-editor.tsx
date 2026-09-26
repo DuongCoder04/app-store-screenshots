@@ -556,6 +556,8 @@ export function ScreenshotEditor() {
       <Toolbar
         appName={state.appName}
         setAppName={(v) => setState((p) => ({ ...p, appName: v }))}
+        themeId={state.themeId}
+        setThemeId={(v) => setState((p) => ({ ...p, themeId: v }))}
         connectedCanvas={state.connectedCanvas}
         setConnectedCanvas={(v) => setState((p) => ({ ...p, connectedCanvas: v }))}
         locale={state.locale}

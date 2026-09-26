@@ -20,14 +20,18 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DEVICE_LABEL,
+  THEMES,
   supportsLandscape,
+  themeById,
 } from "@/lib/constants";
 import { detectPlatform } from "@/lib/defaults";
-import type { Device, Orientation } from "@/lib/types";
+import type { Device, Orientation, Theme } from "@/lib/types";
 
 type Props = {
   appName: string;
   setAppName: (v: string) => void;
+  themeId: string;
+  setThemeId: (v: string) => void;
   connectedCanvas: boolean;
   setConnectedCanvas: (v: boolean) => void;
   locale: string;
@@ -63,6 +67,7 @@ export function Toolbar(props: Props) {
   const showLocale = props.locales.length > 1;
 
   const deviceLabel = DEVICE_LABEL[props.device];
+  const activeTheme = themeById(props.themeId);
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b bg-card/40 px-4 py-2">
@@ -95,6 +100,21 @@ export function Toolbar(props: Props) {
         <UnfoldHorizontal className="h-3.5 w-3.5" />
         {props.connectedCanvas ? "Connected" : "Isolated"}
       </Button>
+
+      <Select value={activeTheme.id} onValueChange={props.setThemeId} disabled={props.busy}>
+        <SelectTrigger className="h-8 w-48 text-xs" title="Theme" aria-label="Theme">
+          <SelectValue>
+            <ThemeOption theme={activeTheme} />
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {Object.values(THEMES).map((theme) => (
+            <SelectItem key={theme.id} value={theme.id}>
+              <ThemeOption theme={theme} />
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       <span aria-hidden className="mx-1 h-5 w-px bg-border" />
 
@@ -234,6 +254,22 @@ export function Toolbar(props: Props) {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function ThemeOption({ theme }: { theme: Theme }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <span
+        aria-hidden
+        className="flex h-4 w-7 shrink-0 overflow-hidden rounded-sm ring-1 ring-black/10"
+      >
+        <span className="flex-1" style={{ background: theme.bg }} />
+        <span className="flex-1" style={{ background: theme.bgAlt }} />
+        <span className="w-1.5" style={{ background: theme.accent }} />
+      </span>
+      <span className="truncate">{theme.name}</span>
+    </span>
   );
 }
 

@@ -17,13 +17,15 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - Supports iOS, iPad, Android phone, Android tablet, and Play Store feature graphic decks
 - Exports exact PNG bundles for all required App Store and Google Play sizes
 - Supports locales, RTL-aware copy/layout guidance, reusable themes, and in-place project migration
+- Ships 18 named visual styles with deep specs and a headline copy library
 
 ## Current Editor UI
 
 - **Connected canvas** - view the whole screenshot strip at once, drag elements across screen boundaries, then export each screen as a precise crop.
 - **Isolated mode** - preserve legacy decks where offscreen elements should not leak into neighboring exports.
 - **Screen sidebar** - add, select, and drag-to-reorder screens with live thumbnails.
-- **Inspector** - edit layout, labels, headlines, screenshots, element stacking, and transforms from the right panel.
+- **Inspector** - edit layout, labels, headlines, screenshots, element stacking, and transforms from the right panel. A **Copy ideas** menu next to the headline drops in a proven formula to rewrite.
+- **Theme picker** - switch palette presets from the toolbar, including one preset per named style.
 - **Platform switcher** - keep iOS and Android decks side by side while sharing the same editor workflow.
 - **Device selector** - design for iPhone, iPad, Android phone, Android tablets, and feature graphic formats.
 - **Autosave** - writes to disk through `/api/project` and mirrors to `localStorage` for instant reloads.
@@ -183,6 +185,35 @@ Screenshots are designed at the largest size for each platform and scaled down f
 - The editor reads `localStorage` first for fast paint, then reconciles with the project file.
 - Older project files are migrated to schema v2 on load while keeping legacy decks isolated unless connected mode was already enabled.
 - Custom themes live in `src/lib/constants.ts`; unknown theme ids fall back to `clean-light`.
+
+## Styles and Copy
+
+The skill ships 18 named visual styles. Each one has a deep spec in `skills/app-store-screenshots/style-prompts/` covering palette, typography, headline emphasis, layout rhythm, decoration density, cross-screen moments, and copy voice. Browse rendered samples and copy-paste prompts in the [style gallery](https://www.parthjadhav.com/products/app-store-screenshots/styles).
+
+| Style | Good for |
+|-------|----------|
+| Hand-Drawn Editorial Tasks | Productivity, tasks, notes with designer taste |
+| Retro Rubberhose Mascot | Cozy habit and wellness apps with a mascot |
+| Moody Curated Dating | Members-only dating, dinner clubs, premium lifestyle |
+| Paper Sticker Skeuomorphic | Student organizers, notes, hobby apps |
+| Dreamy Pastel Couples | Couples, long-distance, pet companions |
+| Glossy 3D K-Beauty Creator | Creator economy, fan communities, beauty |
+| Liquid Glass Aurora | Premium iOS-native utilities, AI assistants |
+| Swiss Grid Bold | Finance, dev tools, analytics, B2B |
+| Neon Athletic Night | Fitness, running, strength, recovery |
+| Magazine Cover Editorial | Food, recipes, reading, travel, coffee |
+| Candy Pop Social | Social, friends, events, gen-Z consumer |
+| Soft Clay Wellness | Meditation, sleep, journaling, health |
+| Midnight Glow Pro | AI, dev tools, pro productivity, power-user finance |
+| Risograph Zine | Music, events, podcasts, indie creative apps |
+| Bento Keynote Grid | Feature-dense productivity, health, finance, utilities |
+| Toybox Primary | Kids learning, families, beginners, casual games |
+| Quiet Japandi | Notes, calendars, reading, tea, minimalist utilities |
+| Vintage Travel Poster | Travel, maps, outdoors, weather, road trips |
+
+Name a style in your prompt ("use Swiss Grid Bold") and the agent applies the whole spec. Every named style also has a matching palette preset in the editor's toolbar theme picker.
+
+For headlines, `skills/app-store-screenshots/copy-ideas.md` has formulas per slide role, ready lines for 13 app categories, eyebrow labels, a weak-to-better table, deck arcs, and localization notes. The same formulas sit in the inspector's **Copy ideas** menu next to the headline field.
 
 ## Design Standards
 

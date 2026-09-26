@@ -232,7 +232,7 @@ function Caption({
   onFocus?: () => void;
 }) {
   const fg = inverted ? theme.fgAlt : theme.fg;
-  const accent = theme.accent;
+  const accent = inverted ? theme.accentAlt ?? theme.accent : theme.accent;
   // Scale typography off the *shorter* dimension so landscape layouts don't
   // produce headlines so tall they overlap the device frame.
   const unit = Math.min(cW, cH);

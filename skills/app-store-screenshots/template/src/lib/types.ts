@@ -73,7 +73,26 @@ export type ThemeId =
   | "dark-bold"
   | "warm-editorial"
   | "ocean-fresh"
-  | "bloom-roast";
+  | "bloom-roast"
+  // One preset per named style in style-prompts/ (same id as the slug).
+  | "hand-drawn-editorial-tasks"
+  | "retro-rubberhose-mascot"
+  | "moody-curated-dating"
+  | "paper-sticker-skeuomorphic"
+  | "dreamy-pastel-couples"
+  | "glossy-3d-kbeauty-creator"
+  | "liquid-glass-aurora"
+  | "swiss-grid-bold"
+  | "neon-athletic-night"
+  | "magazine-cover-editorial"
+  | "candy-pop-social"
+  | "soft-clay-wellness"
+  | "midnight-glow-pro"
+  | "risograph-zine"
+  | "bento-keynote-grid"
+  | "toybox-primary"
+  | "quiet-japandi"
+  | "vintage-travel-poster";
 
 export type Theme = {
   id: string;
@@ -82,7 +101,8 @@ export type Theme = {
   bgAlt: string;       // inverted background
   fg: string;          // text on bg
   fgAlt: string;       // text on bgAlt
-  accent: string;
+  accent: string;      // label color on bg, decorative blobs
+  accentAlt?: string;  // label color on bgAlt; defaults to accent
   muted: string;
 };
 
