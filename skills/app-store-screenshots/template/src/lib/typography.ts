@@ -30,3 +30,20 @@ export function cleanTypography(raw: SlideTypography | undefined): SlideTypograp
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }
+
+/** Font size a free text element renders at when it has no explicit
+ * `fontSize`. Shared by the canvas and the inspector so the Size control
+ * always shows what is actually drawn. */
+export function defaultTextElementFontSize(cW: number, cH: number): number {
+  return Math.round(Math.min(cW, cH) * 0.06);
+}
+
+/** Sensible Size control range for free text elements, relative to the canvas
+ * (a 422px watch face and a 3840px TV frame need very different ranges). */
+export function textElementFontSizeRange(cW: number, cH: number) {
+  const unit = Math.min(cW, cH);
+  return {
+    min: Math.max(8, Math.round(unit * 0.015)),
+    max: Math.round(unit * 0.3),
+  };
+}

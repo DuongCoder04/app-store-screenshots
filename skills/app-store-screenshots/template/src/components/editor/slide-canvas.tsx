@@ -32,7 +32,7 @@ import {
 import { toTextElementId } from "@/lib/elements";
 import { img } from "@/lib/image-cache";
 import { pickText, resolveScreenshot } from "@/lib/locale";
-import { slideFontScales } from "@/lib/typography";
+import { defaultTextElementFontSize, slideFontScales } from "@/lib/typography";
 import {
   AndroidPhone,
   AppleTV,
@@ -1099,7 +1099,7 @@ function SlideElements({
             style={{
               width: "100%",
               color: textColor,
-              fontSize: textElement.fontSize ?? Math.min(cW, cH) * 0.06,
+              fontSize: textElement.fontSize ?? defaultTextElementFontSize(cW, cH),
               fontWeight: textElement.fontWeight ?? 700,
               lineHeight: 1.05,
               textAlign: textElement.align ?? "center",
