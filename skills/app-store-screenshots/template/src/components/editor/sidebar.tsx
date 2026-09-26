@@ -30,6 +30,7 @@ type Props = {
   locale: string;
   appName?: string;
   appIcon?: string;
+  fontFamily?: string;
   connectedCanvas: boolean;
   disabled?: boolean;
   onReorder: (next: Slide[]) => void;
@@ -48,6 +49,7 @@ export function Sidebar({
   locale,
   appName,
   appIcon,
+  fontFamily,
   connectedCanvas,
   disabled,
   onReorder,
@@ -96,6 +98,7 @@ export function Sidebar({
                   locale={locale}
                   appName={appName}
                   appIcon={appIcon}
+                  fontFamily={fontFamily}
                   connectedCanvas={connectedCanvas}
                   onSelect={() => onSelect(slide.id)}
                   onDelete={() => onDelete(slide.id)}

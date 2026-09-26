@@ -88,6 +88,32 @@ function fingerprint(source: HTMLCanvasElement, boxes: Box[], scratch: CanvasRen
   });
 }
 
+// Does the image have visible pixels in its inner 60% ("opaque-center"), only
+// nearer its edges ("edges-only"), or none at all ("empty")? Sampled from the
+// decoded image itself at fingerprint resolution.
+function alphaCoverage(
+  image: HTMLImageElement,
+  scratch: CanvasRenderingContext2D,
+): "opaque-center" | "edges-only" | "empty" {
+  const w = image.naturalWidth;
+  const h = image.naturalHeight;
+  if (!w || !h) return "opaque-center";
+  const hasAlpha = (sx: number, sy: number, sw: number, sh: number) => {
+    scratch.clearRect(0, 0, FINGERPRINT_SIZE, FINGERPRINT_SIZE);
+    scratch.drawImage(image, sx, sy, sw, sh, 0, 0, FINGERPRINT_SIZE, FINGERPRINT_SIZE);
+    const data = scratch.getImageData(0, 0, FINGERPRINT_SIZE, FINGERPRINT_SIZE).data;
+    for (let i = 3; i < data.length; i += 4) if (data[i] > 8) return true;
+    return false;
+  };
+  try {
+    if (hasAlpha(w * 0.2, h * 0.2, w * 0.6, h * 0.6)) return "opaque-center";
+    return hasAlpha(0, 0, w, h) ? "edges-only" : "empty";
+  } catch {
+    // Unreadable (e.g. tainted) images keep the original inner-box check.
+    return "opaque-center";
+  }
+}
+
 export async function renderSlide(
   el: HTMLElement,
   width: number,
@@ -104,18 +130,33 @@ export async function renderSlide(
   );
   await Promise.all(visible.map((image) => image.decode().catch(() => undefined)));
 
+  const { ctx: scratch } = createContext(FINGERPRINT_SIZE, FINGERPRINT_SIZE, true);
+
   // Inner 60% of each visible image, in canvas pixels. The inset keeps bezels,
-  // rounded corners and overlapping frames out of the comparison.
+  // rounded corners and overlapping frames out of the comparison. An image
+  // whose own centre is see-through (the iPhone mockup around an empty screen,
+  // a ring-shaped logo overlay) would look "missing" there even when painted,
+  // so those are checked over their full box instead, as are frames marked
+  // data-export-check="full" whose middle is covered by the screen layer.
+  // Images with no visible pixels at all are skipped.
   const boxes: Box[] = visible
     .map((image) => {
+      const coverage = alphaCoverage(image, scratch);
+      if (coverage === "empty") return null;
+      const inset = coverage === "opaque-center" && image.dataset.exportCheck !== "full" ? 0.2 : 0;
       const r = image.getBoundingClientRect();
       const left = Math.max(r.left, root.left);
       const top = Math.max(r.top, root.top);
       const w = (Math.min(r.right, root.right) - left) * sx;
       const h = (Math.min(r.bottom, root.bottom) - top) * sy;
-      return { x: (left - root.left) * sx + w * 0.2, y: (top - root.top) * sy + h * 0.2, w: w * 0.6, h: h * 0.6 };
+      return {
+        x: (left - root.left) * sx + w * inset,
+        y: (top - root.top) * sy + h * inset,
+        w: w * (1 - inset * 2),
+        h: h * (1 - inset * 2),
+      };
     })
-    .filter((b) => b.w >= 2 && b.h >= 2);
+    .filter((b): b is Box => !!b && b.w >= 2 && b.h >= 2);
 
   const svg = await toSvg(el, {
     width,
@@ -126,7 +167,6 @@ export async function renderSlide(
   });
 
   const { canvas, ctx } = createContext(width, height);
-  const { ctx: scratch } = createContext(FINGERPRINT_SIZE, FINGERPRINT_SIZE, true);
   const draw = (image: HTMLImageElement) => {
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, width, height);

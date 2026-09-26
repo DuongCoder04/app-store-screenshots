@@ -7,6 +7,7 @@ import type {
   Device,
   ElementId,
   ElementTransform,
+  ImageElement,
   Orientation,
   SelectedElement,
   Slide,
@@ -31,9 +32,10 @@ import {
   tvW,
   watchW,
 } from "@/lib/constants";
-import { toTextElementId } from "@/lib/elements";
+import { imageElementKey, isImageElementId, toImageElementId, toTextElementId } from "@/lib/elements";
 import { img } from "@/lib/image-cache";
 import { pickText, resolveScreenshot } from "@/lib/locale";
+import { slideColors } from "@/lib/contrast";
 import { defaultTextElementFontSize, slideFontScales } from "@/lib/typography";
 import {
   AndroidPhone,
@@ -46,6 +48,7 @@ import {
   MacWindow,
   Phone,
 } from "./device-frames";
+import { ImageElementCanvas } from "./image-element-canvas";
 
 type FrameComp = React.ComponentType<{
   src: string;
@@ -125,6 +128,7 @@ type Props = {
   locale: string;
   appName?: string;
   appIcon?: string;
+  fontFamily?: string;
   editable?: boolean;
   edit?: EditHandlers;
   selectedElementId?: ElementId | null;
@@ -152,6 +156,7 @@ type DeckCanvasProps = {
   locale: string;
   appName?: string;
   appIcon?: string;
+  fontFamily?: string;
   connectedCanvas?: boolean;
   editable?: boolean;
   edit?: DeckEditHandlers;
@@ -256,8 +261,7 @@ function Caption({
   inverted?: boolean;
   onFocus?: () => void;
 }) {
-  const fg = inverted ? theme.fgAlt : theme.fg;
-  const accent = inverted ? theme.accentAlt ?? theme.accent : theme.accent;
+  const { fg, accent } = slideColors(theme, { inverted, backgroundColor: slide.backgroundColor });
   const { labelScale, headlineScale } = slideFontScales(slide);
   // Scale typography off the *shorter* dimension so landscape layouts don't
   // produce headlines so tall they overlap the device frame.
@@ -303,7 +307,10 @@ function Caption({
 
 // ---------- Background ----------
 
-function backgroundFor(theme: Theme, inverted?: boolean) {
+function backgroundFor(theme: Theme, inverted?: boolean, customColor?: string) {
+  if (customColor) {
+    return `linear-gradient(160deg, ${customColor} 0%, ${shade(customColor, -6)} 100%)`;
+  }
   if (inverted) {
     return `linear-gradient(160deg, ${theme.bgAlt} 0%, ${shade(theme.bgAlt, -8)} 100%)`;
   }
@@ -515,6 +522,10 @@ export function getElementTransform(
     const textElement = slide.textElements?.find((element) => element.id === textId);
     return textElement?.transform;
   }
+  if (isImageElementId(id)) {
+    const imageId = imageElementKey(id);
+    return slide.imageElements?.find((element) => element.id === imageId)?.transform;
+  }
   const { defaults } = getSlideGeometry(slide, device, orientation);
   const rect = rectFor(id as BuiltInElementId, slide, defaults);
   if (!rect) return undefined;
@@ -545,6 +556,7 @@ export function SlideCanvas({
   locale,
   appName,
   appIcon,
+  fontFamily,
   editable,
   edit,
   selectedElementId = null,
@@ -555,16 +567,18 @@ export function SlideCanvas({
 
   if (slide.layout === "feature-graphic" || device === "feature-graphic") {
     return (
-      <FeatureGraphicCanvas
-        slide={slide}
-        cW={cW}
-        theme={theme}
-        locale={locale}
-        appName={appName}
-        appIcon={appIcon}
-        editable={editable}
-        edit={edit}
-      />
+      <div style={{ width: "100%", height: "100%", fontFamily }}>
+        <FeatureGraphicCanvas
+          slide={slide}
+          cW={cW}
+          theme={theme}
+          locale={locale}
+          appName={appName}
+          appIcon={appIcon}
+          editable={editable}
+          edit={edit}
+        />
+      </div>
     );
   }
 
@@ -582,6 +596,7 @@ export function SlideCanvas({
         height: "100%",
         position: "relative",
         overflow: "hidden",
+        fontFamily,
       }}
     >
       <SlideBackground slide={slide} cW={cW} cH={cH} theme={theme} />
@@ -615,6 +630,7 @@ export function DeckCanvas({
   locale,
   appName,
   appIcon,
+  fontFamily,
   connectedCanvas = true,
   editable,
   edit,
@@ -634,6 +650,7 @@ export function DeckCanvas({
         height: cH,
         position: "relative",
         overflow: "hidden",
+        fontFamily,
       }}
     >
       {slides.map((slide, index) => {
@@ -771,8 +788,8 @@ function SlideBackground({
         position: "absolute",
         inset: 0,
         overflow: "hidden",
-        background: backgroundFor(theme, inverted),
-        color: inverted ? theme.fgAlt : theme.fg,
+        background: backgroundFor(theme, inverted, slide.backgroundColor),
+        color: slideColors(theme, slide).fg,
       }}
     >
       <Blob cW={cW} color={theme.accent} x={-15} y={-10} size={55} opacity={inverted ? 0.25 : 0.32} />
@@ -952,6 +969,7 @@ function SlideElements({
   const screenshotSecondary = resolveScreenshot(slide.screenshotSecondary, locale);
   const { cW, cH, Frame, frameAspect, defaults } = getSlideGeometry(slide, device, orientation);
   const inverted = !!slide.inverted;
+  const colors = slideColors(theme, slide);
   const captionRect = rectFor("caption", slide, defaults);
   const deviceRect = rectFor("device", slide, defaults);
   const secondaryRect = rectFor("deviceSecondary", slide, defaults);
@@ -1055,7 +1073,7 @@ function SlideElements({
     const rect = textElement.transform;
     const rotation = rect.rotation ?? 0;
     const zIndex = rect.zIndex ?? 5 + index;
-    const textColor = textElement.color || (inverted ? theme.fgAlt : theme.fg);
+    const textColor = textElement.color || colors.fg;
     return (
       <Movable
         key={textElement.id}
@@ -1109,10 +1127,44 @@ function SlideElements({
               fontWeight: textElement.fontWeight ?? 700,
               lineHeight: 1.05,
               textAlign: textElement.align ?? "center",
-              textShadow: inverted ? "0 2px 18px rgba(0,0,0,0.22)" : "0 2px 18px rgba(255,255,255,0.2)",
+              textShadow: colors.dark ? "0 2px 18px rgba(0,0,0,0.22)" : "0 2px 18px rgba(255,255,255,0.2)",
             }}
           />
         </div>
+      </Movable>
+    );
+  }
+
+  function renderImageElement(imageElement: ImageElement, index: number) {
+    const elementId = toImageElementId(imageElement.id);
+    const rect = imageElement.transform;
+    const rotation = rect.rotation ?? 0;
+    const zIndex = rect.zIndex ?? 5 + index;
+    return (
+      <Movable
+        key={imageElement.id}
+        rect={toGlobal(rect)}
+        boundsW={boundsW}
+        boundsH={boundsH}
+        editable={editable}
+        previewScale={previewScale}
+        rotation={rotation}
+        onChange={(t) =>
+          edit?.onElementChange?.(
+            elementId,
+            toLocal({
+              ...t,
+              rotation: t.rotation ?? rotation,
+              zIndex: t.zIndex ?? zIndex,
+            }),
+          )
+        }
+        zIndex={zIndex}
+        selected={selectedElementId === elementId}
+        onSelect={() => edit?.onSelectElement?.(elementId)}
+        allowOverflow={allowCrossScreen}
+      >
+        <ImageElementCanvas element={imageElement} editable={editable} />
       </Movable>
     );
   }
@@ -1128,6 +1180,7 @@ function SlideElements({
         )}
       {deviceRect && renderDevice("device", deviceRect, screenshot)}
       {renderCaption()}
+      {(slide.imageElements || []).map(renderImageElement)}
       {(slide.textElements || []).map(renderTextElement)}
     </>
   );

@@ -18,6 +18,9 @@ Scaffold a pre-built Next.js + ShadCN editor that lets the user design and expor
 - One-click bulk PNG export at every Apple/Google-required resolution via `html-to-image`
 - Light/dark variant toggle per slide, a toolbar theme picker (one palette preset per named style), locale select
 - A **Copy ideas** menu next to the headline field with formulas for hero, differentiator, feature, proof, and closer slides
+- Per-slide custom background colors (caption colours stay readable automatically), a live screenshot font menu, and importing licensed WOFF2/WOFF/TTF/OTF fonts
+- Image overlay elements (logos, badges, photos) with drag/resize/rotation/layering controls and directional edge fades
+- Toolbar Undo/Redo (`⌘Z` / `⇧⌘Z`) over the last 50 edits of the session
 - Guided in-place migration for older projects created by this skill; passive and explicit migrations keep legacy decks isolated until the user intentionally opts into connected canvas
 
 Supported devices out of the box:
@@ -703,6 +706,7 @@ project/
 ├── public/
 │   ├── mockup.png               # iPhone bezel (do NOT replace without re-measuring PHONE_SCREEN)
 │   ├── app-icon.png             # → user supplies
+│   ├── fonts/imported/          # Fonts imported from the toolbar (gitignored, like screenshots/uploaded/)
 │   └── screenshots/...
 └── src/
     ├── app/
@@ -712,21 +716,25 @@ project/
     ├── components/
     │   ├── editor/
     │   │   ├── screenshot-editor.tsx   # Top-level editor (state, autosave, export)
-    │   │   ├── toolbar.tsx             # Platform tabs, device select, theme, locale, export
+    │   │   ├── toolbar.tsx             # Platform tabs, device select, theme, font, locale, undo/redo, export
     │   │   ├── sidebar.tsx             # Screen list with @dnd-kit reordering
     │   │   ├── slide-thumb.tsx         # Draggable screen card
     │   │   ├── preview-stage.tsx       # ResizeObserver-scaled connected canvas
     │   │   ├── inspector.tsx           # Right-pane controls for active slide
     │   │   ├── screenshot-picker.tsx   # File drop + picker
+    │   │   ├── background-controls.tsx # Per-slide theme / alternate / custom background
+    │   │   ├── font-importer.tsx       # Hidden input behind the toolbar's "Import font…"
+    │   │   ├── image-element-canvas.tsx # Image overlay content (+ create-image-mask.ts edge fade)
     │   │   ├── slide-canvas.tsx        # Data-driven screen/deck renderer (all layouts)
     │   │   └── device-frames.tsx       # Phone, IPad, AppleTV, AppleWatch, CarPlayScreen, MacWindow, Android
     │   └── ui/                         # Minimal ShadCN primitives (button, select, etc.)
     └── lib/
-        ├── constants.ts                # Canvas sizes, export sizes, themes, frame ratios
+        ├── constants.ts                # Canvas sizes, export sizes, themes, screenshot fonts, frame ratios
         ├── defaults.ts                 # Initial slide decks per device
         ├── types.ts                    # Slide / ProjectState / Theme types
-        ├── storage.ts                  # useProject() — localStorage autosave hook
+        ├── storage.ts                  # useProject() — autosave + undo/redo history
         ├── image-cache.ts              # preloadImages + img() helper
+        ├── contrast.ts                 # Readable caption colours on custom backgrounds
         ├── export-render.ts            # Slide → PNG; waits for every screenshot to paint
         └── utils.ts                    # cn() helper
 ```
