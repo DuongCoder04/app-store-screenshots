@@ -16,7 +16,8 @@ Scaffold a pre-built Next.js + ShadCN editor that lets the user design and expor
 - Auto-save to **`app-store-screenshots.json`** at the project root (git-trackable) + `localStorage` mirror
 - Easy iOS ↔ Android platform switch — separate slide decks live side by side
 - One-click bulk PNG export at every Apple/Google-required resolution via `html-to-image`
-- Light/dark variant toggle per slide, theme presets, locale select
+- Light/dark variant toggle per slide, a toolbar theme picker (one palette preset per named style), locale select
+- A **Copy ideas** menu next to the headline field with formulas for hero, differentiator, feature, proof, and closer slides
 - Guided in-place migration for older projects created by this skill; passive and explicit migrations keep legacy decks isolated until the user intentionally opts into connected canvas
 
 Supported devices out of the box:
@@ -326,7 +327,7 @@ Ask the user these. Do not proceed until you have answers:
 2. **App icon** — "Where is your app icon PNG?"
 3. **App name** — "What's the app called?"
 4. **Feature list** — "List your app's features in priority order. What's the #1 thing your app does?"
-5. **Style direction** — "What style do you want? You can either (a) pick one of the named deep-spec styles, or (b) describe your own vibe in your own words (warm/organic, dark/moody, clean/minimal, bold/colorful, plus any reference apps you like) and I'll build a custom palette. The template also ships with `clean-light`, `dark-bold`, `warm-editorial`, `ocean-fresh`, and `bloom-roast` palette presets you can start from. The named deep specs live in `style-prompts/` — see `style-prompts.md` for the full index. Currently available: Retro Rubberhose Mascot, Moody Curated Dating, Paper Sticker Skeuomorphic, Dreamy Pastel Couples, Hand-Drawn Editorial Tasks, Glossy 3D K-Beauty Creator. If the user names one of these — or describes something that clearly matches one — read `style-prompts/_QUALITY_BAR.md` first, then the matching deep spec file, and apply its entire spec (palette, gradients, shadows, rotations, per-slide breakdown). If the user describes a fully custom style, fall back to the General Visual Design Principles below and pick the closest deep spec as a starting reference."
+5. **Style direction** — "What style do you want? You can either (a) pick one of the named deep-spec styles, or (b) describe your own vibe in your own words (warm/organic, dark/moody, clean/minimal, bold/colorful, plus any reference apps you like) and I'll build a custom palette. The template also ships with palette presets in the toolbar theme picker: the generic `clean-light`, `dark-bold`, `warm-editorial`, `ocean-fresh`, and `bloom-roast`, plus one preset per named style (same id as the style slug). The named deep specs live in `style-prompts/` — see `style-prompts.md` for the full index. Currently available: Retro Rubberhose Mascot, Moody Curated Dating, Paper Sticker Skeuomorphic, Dreamy Pastel Couples, Hand-Drawn Editorial Tasks, Glossy 3D K-Beauty Creator, Liquid Glass Aurora, Swiss Grid Bold, Neon Athletic Night, Magazine Cover Editorial, Candy Pop Social, Soft Clay Wellness, Midnight Glow Pro, Risograph Zine, Bento Keynote Grid, Toybox Primary, Quiet Japandi, Vintage Travel Poster. If the user names one of these — or describes something that clearly matches one — read `style-prompts/_QUALITY_BAR.md` first, then the matching deep spec file, and apply its entire spec (palette, gradients, shadows, rotations, per-slide breakdown). If the user describes a fully custom style, fall back to the General Visual Design Principles below and pick the closest deep spec as a starting reference."
 
 ### Optional
 
@@ -391,7 +392,7 @@ The starter project state lives in `app-store-screenshots.json`, not `src/lib/de
 
 If the user provided headlines, edit `app-store-screenshots.json` to set:
 - `appName`
-- `themeId` (one of `"clean-light" | "dark-bold" | "warm-editorial" | "ocean-fresh" | "bloom-roast"`, or add a matching entry to `THEMES` in `src/lib/constants.ts`)
+- `themeId` (one of `"clean-light" | "dark-bold" | "warm-editorial" | "ocean-fresh" | "bloom-roast"`, a named style slug such as `"swiss-grid-bold"` when the user picked that style, or add a matching entry to `THEMES` in `src/lib/constants.ts`). Themes may set `accentAlt` for the label color on inverted slides.
 - `connectedCanvas` (`true` for new connected decks; migrated legacy decks should stay `false` until the user opts in)
 - Starter slides per device with the user's `label` + `headline` + screenshot paths
 
@@ -408,6 +409,8 @@ Tell the user to open the URL and start editing. The editor auto-saves to **`app
 ## Step 3: Coach the User on Copy
 
 Inside the editor the user will write headlines themselves, but they often need guidance. Apply these rules when reviewing their copy or generating suggestions.
+
+**Read [`copy-ideas.md`](./copy-ideas.md) before drafting headlines.** It has formulas per deck slot (hero, differentiator, feature, proof, closer), ready lines for 13 app categories, eyebrow labels, a weak-to-better table, four deck arcs, and localization notes. When you propose copy, give three options per slide (paint a moment / state an outcome / kill a pain), then rewrite the chosen one in the selected style's voice. The editor's inspector has a matching **Copy ideas** menu next to the headline field (`src/lib/copy-ideas.ts`) so users can drop in a formula and replace the bracketed words themselves.
 
 ### The Iron Rules
 
