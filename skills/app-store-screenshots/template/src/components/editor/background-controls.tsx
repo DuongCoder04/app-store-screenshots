@@ -68,6 +68,11 @@ export function BackgroundControls({ slide, theme, onChange }: Props) {
           />
         </div>
       )}
+      {mode === "custom" && (
+        <p className="text-[11px] text-muted-foreground">
+          Caption text switches to a readable colour when the theme&apos;s colours would be too faint.
+        </p>
+      )}
     </div>
   );
 }

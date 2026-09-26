@@ -35,6 +35,7 @@ import {
 import { imageElementKey, isImageElementId, toImageElementId, toTextElementId } from "@/lib/elements";
 import { img } from "@/lib/image-cache";
 import { pickText, resolveScreenshot } from "@/lib/locale";
+import { slideColors } from "@/lib/contrast";
 import { defaultTextElementFontSize, slideFontScales } from "@/lib/typography";
 import {
   AndroidPhone,
@@ -262,8 +263,7 @@ function Caption({
   inverted?: boolean;
   onFocus?: () => void;
 }) {
-  const fg = inverted ? theme.fgAlt : theme.fg;
-  const accent = inverted ? theme.accentAlt ?? theme.accent : theme.accent;
+  const { fg, accent } = slideColors(theme, { inverted, backgroundColor: slide.backgroundColor });
   const { labelScale, headlineScale } = slideFontScales(slide);
   // Scale typography off the *shorter* dimension so landscape layouts don't
   // produce headlines so tall they overlap the device frame.
@@ -793,7 +793,7 @@ function SlideBackground({
         inset: 0,
         overflow: "hidden",
         background: backgroundFor(theme, inverted, slide.backgroundColor),
-        color: inverted ? theme.fgAlt : theme.fg,
+        color: slideColors(theme, slide).fg,
       }}
     >
       <Blob cW={cW} color={theme.accent} x={-15} y={-10} size={55} opacity={inverted ? 0.25 : 0.32} />
@@ -973,6 +973,7 @@ function SlideElements({
   const screenshotSecondary = resolveScreenshot(slide.screenshotSecondary, locale);
   const { cW, cH, Frame, frameAspect, defaults } = getSlideGeometry(slide, device, orientation);
   const inverted = !!slide.inverted;
+  const colors = slideColors(theme, slide);
   const captionRect = rectFor("caption", slide, defaults);
   const deviceRect = rectFor("device", slide, defaults);
   const secondaryRect = rectFor("deviceSecondary", slide, defaults);
@@ -1076,7 +1077,7 @@ function SlideElements({
     const rect = textElement.transform;
     const rotation = rect.rotation ?? 0;
     const zIndex = rect.zIndex ?? 5 + index;
-    const textColor = textElement.color || (inverted ? theme.fgAlt : theme.fg);
+    const textColor = textElement.color || colors.fg;
     return (
       <Movable
         key={textElement.id}
@@ -1130,7 +1131,7 @@ function SlideElements({
               fontWeight: textElement.fontWeight ?? 700,
               lineHeight: 1.05,
               textAlign: textElement.align ?? "center",
-              textShadow: inverted ? "0 2px 18px rgba(0,0,0,0.22)" : "0 2px 18px rgba(255,255,255,0.2)",
+              textShadow: colors.dark ? "0 2px 18px rgba(0,0,0,0.22)" : "0 2px 18px rgba(255,255,255,0.2)",
             }}
           />
         </div>
