@@ -706,7 +706,7 @@ project/
 ├── public/
 │   ├── mockup.png               # iPhone bezel (do NOT replace without re-measuring PHONE_SCREEN)
 │   ├── app-icon.png             # → user supplies
-│   ├── fonts/imported/          # Fonts imported from the toolbar (commit with the project)
+│   ├── fonts/imported/          # Fonts imported from the toolbar (gitignored, like screenshots/uploaded/)
 │   └── screenshots/...
 └── src/
     ├── app/

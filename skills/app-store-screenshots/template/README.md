@@ -55,7 +55,7 @@ The toolbar **Theme** menu recolours the whole deck (backgrounds, text, accents)
 
 The toolbar font menu sets the typeface of the screenshot canvas and exports (not the editor UI). **Inter (default)** is the template font and what projects without a `fontId` use. **System Sans** and **Georgia** are available everywhere; **Avenir Next**, **Helvetica Neue**, **Futura**, **Baskerville**, **Palatino**, **Optima** and **American Typewriter** are macOS system fonts that fall back to similar faces elsewhere, so export on the machine you designed on.
 
-**Import font…** at the bottom of the menu takes a licensed WOFF2, WOFF, TTF or OTF file (16 MB max). `/api/upload-font` checks the file's magic bytes and stores it as `public/fonts/imported/<hash>.<ext>`; the project saves it as `importedFont` with `fontId: "self-hosted"`, so commit that folder with the project JSON. Once imported, the font is listed in the menu under its file name, and it is loaded and embedded before every export.
+**Import font…** at the bottom of the menu takes a licensed WOFF2, WOFF, TTF or OTF file (16 MB max). `/api/upload-font` checks the file's magic bytes and stores it as `public/fonts/imported/<hash>.<ext>`; the project saves it as `importedFont` with `fontId: "self-hosted"`. Like uploaded screenshots, that folder is gitignored (font licences often forbid redistribution); keep the file alongside the project JSON if you move the project, or screenshot text falls back to a generic sans-serif. Once imported, the font is listed in the menu under its file name, and it is loaded and embedded before every export.
 
 ### Image overlays
 
