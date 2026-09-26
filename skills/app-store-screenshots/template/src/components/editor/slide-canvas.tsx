@@ -884,7 +884,7 @@ function FeatureGraphicCanvas({
               justifyContent: "center",
               color: theme.fgAlt,
               fontWeight: 800,
-              fontSize: cW * 0.07 * appNameScale,
+              fontSize: cW * 0.07,
               boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
             }}
           >

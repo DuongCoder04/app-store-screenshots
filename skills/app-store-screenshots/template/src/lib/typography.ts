@@ -18,18 +18,15 @@ export function slideFontScales(slide: Slide) {
   };
 }
 
-/** Persist only non-default scales so JSON stays tidy. */
+/** Persist only non-default scales so JSON stays tidy. Values are clamped
+ * first, so invalid or out-of-range input from a loaded project never ends up
+ * stored as a no-op `1` or outside the slider range. */
 export function cleanTypography(raw: SlideTypography | undefined): SlideTypography | undefined {
-  if (!raw) return undefined;
+  if (!raw || typeof raw !== "object") return undefined;
   const out: SlideTypography = {};
-  if (raw.labelScale !== undefined && raw.labelScale !== FONT_SCALE_DEFAULT) {
-    out.labelScale = clampFontScale(raw.labelScale);
-  }
-  if (raw.headlineScale !== undefined && raw.headlineScale !== FONT_SCALE_DEFAULT) {
-    out.headlineScale = clampFontScale(raw.headlineScale);
-  }
-  if (raw.appNameScale !== undefined && raw.appNameScale !== FONT_SCALE_DEFAULT) {
-    out.appNameScale = clampFontScale(raw.appNameScale);
+  for (const key of ["labelScale", "headlineScale", "appNameScale"] as const) {
+    const value = clampFontScale(raw[key]);
+    if (value !== FONT_SCALE_DEFAULT) out[key] = value;
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }
