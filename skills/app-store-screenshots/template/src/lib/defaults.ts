@@ -121,44 +121,15 @@ function tabletStarter(kind: "7" | "10"): Slide[] {
   ];
 }
 
+// Mac is contained like the TV, so "hero" and "device-bottom" would look alike;
+// the split and two-window slides give the wide canvas its rhythm instead.
 function macStarter(): Slide[] {
   return [
-    {
-      id: nid(),
-      layout: "hero",
-      label: en("MEET YOUR APP"),
-      headline: en("Made for\nyour Mac."),
-      screenshot: "",
-    },
-    {
-      id: nid(),
-      layout: "split-landscape",
-      label: en("FEATURE 01"),
-      headline: en("Find it\nanyway."),
-      screenshot: "",
-    },
-    {
-      id: nid(),
-      layout: "device-bottom",
-      label: en("FEATURE 02"),
-      headline: en("One shortcut\naway."),
-      screenshot: "",
-    },
-    {
-      id: nid(),
-      layout: "device-top",
-      label: en("FEATURE 03"),
-      headline: en("Nothing leaves\nthis Mac."),
-      screenshot: "",
-      inverted: true,
-    },
-    {
-      id: nid(),
-      layout: "no-device",
-      label: en("MORE"),
-      headline: en("And so\nmuch more."),
-      screenshot: "",
-    },
+    { id: nid(), layout: "hero", label: en("MEET YOUR APP"), headline: en("Made for\nyour Mac."), screenshot: "" },
+    { id: nid(), layout: "split-landscape", label: en("FEATURE 01"), headline: en("Everything in\none window."), screenshot: "" },
+    { id: nid(), layout: "device-top", label: en("FEATURE 02"), headline: en("One shortcut away."), screenshot: "", inverted: true },
+    { id: nid(), layout: "two-devices", label: en("FEATURE 03"), headline: en("Work across windows."), screenshot: "", screenshotSecondary: "" },
+    { id: nid(), layout: "no-device", label: en("MORE"), headline: en("And so\nmuch more."), screenshot: "" },
   ];
 }
 
