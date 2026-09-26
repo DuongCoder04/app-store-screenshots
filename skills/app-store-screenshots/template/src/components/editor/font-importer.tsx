@@ -10,6 +10,18 @@ type Props = {
   onImported: (font: ImportedFont) => void;
 };
 
+const MAX_FONT_BYTES = 16 * 1024 * 1024;
+
+async function fileToBase64(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  return dataUrl.slice(dataUrl.indexOf(",") + 1);
+}
+
 export function FontImporter({ disabled, importedFont, onImported }: Props) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
@@ -18,10 +30,13 @@ export function FontImporter({ disabled, importedFont, onImported }: Props) {
   async function importFont(file: File) {
     setUploading(true);
     setError(null);
-    const form = new FormData();
-    form.append("font", file);
     try {
-      const response = await fetch("/api/upload-font", { method: "POST", body: form });
+      if (file.size > MAX_FONT_BYTES) throw new Error("Font file is too large (16MB maximum).");
+      const response = await fetch("/api/upload-font", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: await fileToBase64(file) }),
+      });
       const data = (await response.json()) as { ok: boolean; error?: string; font?: ImportedFont };
       if (!data.ok || !data.font) throw new Error(data.error || "Could not import that font.");
       onImported(data.font);
