@@ -1,4 +1,4 @@
-import type { Device, Orientation, SlideLayout, Theme, ThemeId } from "./types";
+import type { Device, Orientation, Platform, SlideLayout, Theme, ThemeId } from "./types";
 
 // ---------- Canvas dimensions (design at largest required resolution) ----------
 export const CANVAS: Record<Device, { w: number; h: number; wL?: number; hL?: number }> = {
@@ -423,6 +423,15 @@ export function hasTheme(themeId: string | undefined): boolean {
 
 export const STORAGE_KEY = "app-store-screenshots:project:v1";
 export const PROJECT_SCHEMA_VERSION = 2;
+
+// Toolbar platform tabs, in menu order. The platform is also the top-level
+// export folder (ios/…, macos/…, android/…). Mac gets its own tab because App
+// Store Connect lists macOS as a separate platform with its own screenshot set.
+export const PLATFORM_DEVICES: Record<Platform, Device[]> = {
+  ios: ["iphone", "ipad", "tvos", "watchos", "carplay"],
+  macos: ["mac"],
+  android: ["android", "android-7", "android-10", "feature-graphic"],
+};
 
 export const DEVICE_LABEL: Record<Device, string> = {
   iphone: "iPhone",

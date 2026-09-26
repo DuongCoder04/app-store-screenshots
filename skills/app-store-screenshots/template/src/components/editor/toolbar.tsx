@@ -20,6 +20,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DEVICE_LABEL,
+  PLATFORM_DEVICES,
   THEMES,
   supportsLandscape,
   themeById,
@@ -55,7 +56,7 @@ export function Toolbar(props: Props) {
   const hasLandscape = supportsLandscape(props.device);
   const [resetOpen, setResetOpen] = React.useState(false);
 
-  // Track last device per platform so iOS/Android tabs preserve user's choice.
+  // Track last device per platform so the platform tabs preserve the user's choice.
   const lastByPlatform = React.useRef<Record<Platform, Device>>({
     ios: platform === "ios" ? props.device : "iphone",
     macos: platform === "macos" ? props.device : "mac",
@@ -68,6 +69,7 @@ export function Toolbar(props: Props) {
   const showLocale = props.locales.length > 1;
 
   const deviceLabel = DEVICE_LABEL[props.device];
+  const platformDevices = PLATFORM_DEVICES[platform];
   const activeTheme = themeById(props.themeId);
 
   return (
@@ -140,35 +142,23 @@ export function Toolbar(props: Props) {
         </TabsList>
       </Tabs>
 
-      <Select
-        value={props.device}
-        onValueChange={(v) => props.setDevice(v as Device)}
-        disabled={props.busy}
-      >
-        <SelectTrigger className="h-8 w-44 text-xs">
-          <SelectValue placeholder="Device">{deviceLabel}</SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {platform === "ios" ? (
-            <>
-              <SelectItem value="iphone">{DEVICE_LABEL.iphone}</SelectItem>
-              <SelectItem value="ipad">{DEVICE_LABEL.ipad}</SelectItem>
-              <SelectItem value="tvos">{DEVICE_LABEL.tvos}</SelectItem>
-              <SelectItem value="watchos">{DEVICE_LABEL.watchos}</SelectItem>
-              <SelectItem value="carplay">{DEVICE_LABEL.carplay}</SelectItem>
-            </>
-          ) : platform === "macos" ? (
-            <SelectItem value="mac">{DEVICE_LABEL.mac}</SelectItem>
-          ) : (
-            <>
-              <SelectItem value="android">{DEVICE_LABEL.android}</SelectItem>
-              <SelectItem value="android-7">{DEVICE_LABEL["android-7"]}</SelectItem>
-              <SelectItem value="android-10">{DEVICE_LABEL["android-10"]}</SelectItem>
-              <SelectItem value="feature-graphic">{DEVICE_LABEL["feature-graphic"]}</SelectItem>
-            </>
-          )}
-        </SelectContent>
-      </Select>
+      {/* Mac has a single device, so the tab alone says which deck is open. */}
+      {platformDevices.length > 1 && (
+        <Select
+          value={props.device}
+          onValueChange={(v) => props.setDevice(v as Device)}
+          disabled={props.busy}
+        >
+          <SelectTrigger className="h-8 w-44 text-xs">
+            <SelectValue placeholder="Device">{deviceLabel}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {platformDevices.map((d) => (
+              <SelectItem key={d} value={d}>{DEVICE_LABEL[d]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       {hasLandscape && (
         <Select

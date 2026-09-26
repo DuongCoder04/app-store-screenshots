@@ -1,6 +1,6 @@
 import { DEFAULT_LOCALE } from "./locale";
-import { DEFAULT_THEME_ID, PROJECT_SCHEMA_VERSION } from "./constants";
-import type { Device, ProjectState, Slide } from "./types";
+import { DEFAULT_THEME_ID, PLATFORM_DEVICES, PROJECT_SCHEMA_VERSION } from "./constants";
+import type { Device, Platform, ProjectState, Slide } from "./types";
 
 let _id = 0;
 export const nid = () => `s_${Date.now().toString(36)}_${(_id++).toString(36)}`;
@@ -179,11 +179,7 @@ export function newSlide(layout: Slide["layout"] = "device-bottom"): Slide {
   };
 }
 
-const IOS_DEVICES: ReadonlySet<Device> = new Set<Device>([
-  "iphone", "ipad", "tvos", "watchos", "carplay",
-]);
-
-export function detectPlatform(device: Device): "ios" | "macos" | "android" {
-  if (device === "mac") return "macos";
-  return IOS_DEVICES.has(device) ? "ios" : "android";
+export function detectPlatform(device: Device): Platform {
+  const platforms = Object.keys(PLATFORM_DEVICES) as Platform[];
+  return platforms.find((p) => PLATFORM_DEVICES[p].includes(device)) ?? "ios";
 }
