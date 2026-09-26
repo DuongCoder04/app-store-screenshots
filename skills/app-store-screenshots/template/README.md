@@ -13,9 +13,7 @@ bun dev       # http://localhost:3000
 
 - **Connected canvas editor** (`src/components/editor/`) — every screen sits on one horizontal canvas, so phones, captions, and other elements can be dragged across screen boundaries and exported as split crops when Connected mode is enabled.
 - **Screen controls** — drag-to-reorder screens, click-to-edit text, screenshot drop targets, per-screen layout switcher, dark/light toggle.
-- **Image overlays** — add PNG/JPG elements, then upload or replace them, drag, resize, rotate, layer, crop, and apply a one-sided edge fade. See [Image Elements](docs/image-elements.md).
-- **Edit history** — undo or redo up to 25 recent changes from the toolbar or keyboard. See [Edit History](docs/edit-history.md).
-- **Live themes, fonts, and backgrounds** — change the deck theme or font live; set each slide to its theme background, alternate, or custom color. Fonts can be imported from WOFF2, WOFF, TTF, or OTF files. See [Themes](docs/themes.md), [Screenshot Fonts](docs/screenshot-fonts.md), and [Background Controls](docs/background-controls.md).
+- **Image overlays, fonts, backgrounds and undo** — PNG/JPG overlay elements, a live screenshot font menu (with font import), per-screen custom backgrounds, and toolbar Undo/Redo. See [Editor controls](#editor-controls).
 - **Device frames** (`src/components/editor/device-frames.tsx`) — iPhone (PNG mockup), iPad, Apple TV, Apple Watch, CarPlay head unit, Mac window, Android phone, Android tablet (portrait + landscape), feature graphic.
 - **Auto-save (git-trackable)** — every change is persisted within ~600ms to **`app-store-screenshots.json`** at the project root (via `/api/project`) **and** mirrored to `localStorage` as an instant-paint cache. Commit `app-store-screenshots.json` and you can `git clone` to another machine and resume exactly where you left off.
 - **Multi-device decks** — iOS (iPhone, iPad, Apple TV, Apple Watch, CarPlay), Mac, and Android decks live side by side; switching the platform tab keeps each tab's last device.
@@ -47,11 +45,31 @@ CarPlay has no App Store Connect slot of its own: the CarPlay deck is a head-uni
 
 Mac is its own platform tab because App Store Connect lists macOS separately from the iOS app. The Mac deck designs at 2880×1800 and exports the four 16:10 Mac App Store sizes (2880×1800, 2560×1600, 1440×900, 1280×800) to `macos/mac/<WxH>/<locale>/`. The Mac window's content area is exactly 16:10, so a full-screen 16:10 capture fills it uncropped.
 
+## Editor controls
+
+### Themes and backgrounds
+
+The toolbar **Theme** menu recolours the whole deck (backgrounds, text, accents); it doesn't touch copy, layouts or screenshots. Each screen's **Background** control in the inspector picks the theme background, the theme's alternate (dark/light) background, or a **custom colour** (colour picker or hex). A custom colour applies to that screen only and is saved as `backgroundColor` on the slide. When the theme's text or label colour would be hard to read on it (below a 4.5:1 contrast ratio for text, 3:1 for the label), the caption switches to the theme's other text colour, or to near-black / white. Text elements you've given an explicit colour keep it.
+
+### Screenshot fonts
+
+The toolbar font menu sets the typeface of the screenshot canvas and exports (not the editor UI). **Inter (default)** is the template font and what projects without a `fontId` use. **System Sans** and **Georgia** are available everywhere; **Avenir Next**, **Helvetica Neue**, **Futura**, **Baskerville**, **Palatino**, **Optima** and **American Typewriter** are macOS system fonts that fall back to similar faces elsewhere, so export on the machine you designed on.
+
+**Import font…** at the bottom of the menu takes a licensed WOFF2, WOFF, TTF or OTF file (16 MB max). `/api/upload-font` checks the file's magic bytes and stores it as `public/fonts/imported/<hash>.<ext>`; the project saves it as `importedFont` with `fontId: "self-hosted"`, so commit that folder with the project JSON. Once imported, the font is listed in the menu under its file name, and it is loaded and embedded before every export.
+
+### Image overlays
+
+In the inspector's **Elements** card, click **Image**, then **Pick** (or drop) a PNG/JPG. Uploads go through `/api/upload` into `public/screenshots/uploaded/`, like screenshots. The first image sizes the overlay frame to its aspect ratio; after that you can drag, resize, rotate (canvas handle or slider), restack, choose **Fill frame** (crop) or **Whole image**, and fade one edge into the background. In Connected mode overlays can cross screen edges like other elements. Overlays are saved per screen as `imageElements`, and the exporter waits for them to paint just like device screenshots. The Play Store feature graphic has a fixed icon + name + tagline layout, so it doesn't take overlays or text elements.
+
+### Undo and redo
+
+The toolbar arrows, `⌘Z` / `Ctrl+Z` and `⇧⌘Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`) step through the last 50 edits of the session: copy, layouts, element moves, text sizes, backgrounds, fonts, themes, overlays and resets. Rapid changes (typing, dragging a slider) collapse into one step. Switching platform, device, orientation or locale isn't an edit, so it doesn't use up an undo step; undoing an edit takes you back to the deck it was made on. While a text field is focused the shortcuts undo that field's typing instead. History resets on reload.
+
 ## Customizing
 
 | Where | What |
 |-------|------|
-| `src/lib/constants.ts` | Canvas dimensions, export sizes, frame ratios, themes, locales |
+| `src/lib/constants.ts` | Canvas dimensions, export sizes, frame ratios, themes, screenshot fonts, locales |
 | `app-store-screenshots.json` | Canonical starter project: app name, current device, connected-canvas mode, slide copy, screenshots, and transforms |
 | `src/lib/defaults.ts` | Fallback/reset state used when no project file or local cache exists |
 | `src/components/editor/slide-canvas.tsx` | Add new layouts and connected-canvas element rendering |
