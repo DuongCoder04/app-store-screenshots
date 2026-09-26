@@ -1,4 +1,4 @@
-import type { Device, Orientation, SlideLayout, Theme, ThemeId } from "./types";
+import type { Device, Orientation, Platform, SlideLayout, Theme, ThemeId } from "./types";
 
 // ---------- Canvas dimensions (design at largest required resolution) ----------
 export const CANVAS: Record<Device, { w: number; h: number; wL?: number; hL?: number }> = {
@@ -13,6 +13,9 @@ export const CANVAS: Record<Device, { w: number; h: number; wL?: number; hL?: nu
   // It is submitted in an iPhone slot, which accepts landscape, so the canvas is
   // the 6.9" iPhone size turned sideways to fit a wide head unit.
   carplay:       { w: 2868, h: 1320 },
+  // Mac App Store is landscape-only 16:10. Design at 2880x1800; every other Mac
+  // slot is an exact 16:10 downscale.
+  mac:           { w: 2880, h: 1800 },
   android:       { w: 1080, h: 1920 },
   "android-7":   { w: 1200, h: 1920, wL: 1920, hL: 1200 },
   "android-10":  { w: 1600, h: 2560, wL: 2560, hL: 1600 },
@@ -62,6 +65,14 @@ export const EXPORT_SIZES: Record<Device, ExportSize[]> = {
     { label: '6.3" landscape', w: 2622, h: 1206 },
     { label: '6.1" landscape', w: 2436, h: 1125 },
   ],
+  // App Store Connect display type APP_DESKTOP (Mac App Store). These four
+  // 16:10 sizes are the only accepted dimensions.
+  mac: [
+    { label: "2880 x 1800", w: 2880, h: 1800 },
+    { label: "2560 x 1600", w: 2560, h: 1600 },
+    { label: "1440 x 900",  w: 1440, h: 900 },
+    { label: "1280 x 800",  w: 1280, h: 800 },
+  ],
   android:       [{ label: "Phone",          w: 1080, h: 1920 }],
   "android-7":   [{ label: '7" Portrait',    w: 1200, h: 1920 }],
   "android-10":  [{ label: '10" Portrait',   w: 1600, h: 2560 }],
@@ -97,6 +108,11 @@ export const WATCH_RATIO = 422 / 514;    // Apple Watch Ultra, the largest accep
 // Widescreen 1920x720, Portrait 900x1200, Standard Video Playback 1920x1080.
 // "Standard" is the default here; change this constant to target another.
 export const CARPLAY_RATIO = 800 / 480;
+// Mac window: a 16:10 content area under a title bar MAC_TITLE_BAR x the content
+// height tall, so a 16:10 capture (the Mac App Store's own aspect) fills the
+// window without being cropped.
+export const MAC_TITLE_BAR = 0.045;
+export const MAC_RATIO = 16 / (10 * (1 + MAC_TITLE_BAR));
 
 // iPhone mockup screen overlay (pre-measured)
 export const PHONE_SCREEN = {
@@ -134,6 +150,11 @@ export function watchW(cW: number, cH: number, clamp = 0.52) {
 // Height-bound on the wide canvas: the head unit must clear the caption block.
 export function carPlayW(cW: number, cH: number, clamp = 0.86) {
   return Math.min(clamp, 0.58 * (cH / cW) * CARPLAY_RATIO);
+}
+// Contained like the TV: height-bound so the window clears the caption block
+// above or below it on the 16:10 canvas.
+export function macW(cW: number, cH: number, clamp = 0.86) {
+  return Math.min(clamp, 0.58 * (cH / cW) * MAC_RATIO);
 }
 
 // ---------- Themes ----------
@@ -403,12 +424,22 @@ export function hasTheme(themeId: string | undefined): boolean {
 export const STORAGE_KEY = "app-store-screenshots:project:v1";
 export const PROJECT_SCHEMA_VERSION = 2;
 
+// Toolbar platform tabs, in menu order. The platform is also the top-level
+// export folder (ios/…, macos/…, android/…). Mac gets its own tab because App
+// Store Connect lists macOS as a separate platform with its own screenshot set.
+export const PLATFORM_DEVICES: Record<Platform, Device[]> = {
+  ios: ["iphone", "ipad", "tvos", "watchos", "carplay"],
+  macos: ["mac"],
+  android: ["android", "android-7", "android-10", "feature-graphic"],
+};
+
 export const DEVICE_LABEL: Record<Device, string> = {
   iphone: "iPhone",
   ipad: "iPad",
   tvos: "Apple TV",
   watchos: "Apple Watch",
   carplay: "CarPlay (iPhone slot)",
+  mac: "Mac",
   android: "Android Phone",
   "android-7": 'Android 7" Tablet',
   "android-10": 'Android 10" Tablet',

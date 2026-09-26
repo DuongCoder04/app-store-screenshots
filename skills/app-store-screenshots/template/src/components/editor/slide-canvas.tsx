@@ -17,11 +17,13 @@ import {
   CANVAS,
   CARPLAY_RATIO,
   IPAD_RATIO,
+  MAC_RATIO,
   MK_RATIO,
   TV_RATIO,
   WATCH_RATIO,
   carPlayW,
   ipadW,
+  macW,
   phoneW,
   phoneWSmall,
   tabletLW,
@@ -41,6 +43,7 @@ import {
   AndroidTabletL,
   AndroidTabletP,
   IPad,
+  MacWindow,
   Phone,
 } from "./device-frames";
 
@@ -68,6 +71,7 @@ function getFrameAspect(device: Device, orientation: Orientation) {
     case "tvos":        return TV_RATIO;
     case "watchos":     return WATCH_RATIO;
     case "carplay":     return CARPLAY_RATIO;
+    case "mac":         return MAC_RATIO;
     case "android-7":
     case "android-10":  return orientation === "landscape" ? 8 / 5 : 5 / 8;
     default:            return 1;
@@ -90,6 +94,8 @@ export function getFrameForDevice(device: Device, orientation: Orientation): {
       return { Comp: AppleWatch, widthFn: watchW, smallWidthFn: (cW, cH) => watchW(cW, cH, 0.42) };
     case "carplay":
       return { Comp: CarPlayScreen, widthFn: carPlayW, smallWidthFn: (cW, cH) => carPlayW(cW, cH, 0.7) };
+    case "mac":
+      return { Comp: MacWindow, widthFn: macW, smallWidthFn: (cW, cH) => macW(cW, cH, 0.46) };
     case "android":
       return { Comp: AndroidPhone, widthFn: phoneW, smallWidthFn: phoneWSmall };
     case "android-7":
@@ -369,7 +375,7 @@ function getDefaultRects(
   fwFrac: number,
   fwSmallFrac: number,
   // Phones and tablets are deliberately hung past the canvas edge so they bleed off
-  // it. When true (TV, watch, CarPlay), every device rect stays fully inside the
+  // it. When true (TV, watch, CarPlay, Mac), every device rect stays fully inside the
   // canvas instead.
   contain = false,
 ): LayoutRects {
@@ -482,8 +488,8 @@ function rectFor(
 }
 
 // Devices whose frame must never be cropped by the canvas edge. A clipped TV,
-// head unit or watch face reads as a mistake, not as a deliberate bleed.
-const CONTAINED_DEVICES: ReadonlySet<Device> = new Set<Device>(["tvos", "watchos", "carplay"]);
+// head unit, watch face or Mac window reads as a mistake, not as a deliberate bleed.
+const CONTAINED_DEVICES: ReadonlySet<Device> = new Set<Device>(["tvos", "watchos", "carplay", "mac"]);
 
 function getSlideGeometry(slide: Slide, device: Device, orientation: Orientation) {
   const { cW, cH } = getCanvas(device, orientation);

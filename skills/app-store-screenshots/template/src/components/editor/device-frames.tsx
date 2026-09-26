@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { PHONE_SCREEN } from "@/lib/constants";
+import { MAC_RATIO, MAC_TITLE_BAR, PHONE_SCREEN } from "@/lib/constants";
 import { img } from "@/lib/image-cache";
 
 type FrameProps = {
@@ -203,6 +203,72 @@ export function AndroidTabletL({ src, alt = "", style, hideEmpty }: FrameProps) 
             background: "#000",
           }}
         >
+          {resolved ? (
+            <img
+              src={resolved}
+              alt={alt}
+              style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+              draggable={false}
+            />
+          ) : hideEmpty ? null : (
+            <EmptySlot />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mac window: title bar + a content area that is exactly 16:10, the Mac App
+// Store's own aspect, so a full-screen or 16:10 capture fills it uncropped.
+export function MacWindow({ src, alt = "", style, hideEmpty }: FrameProps) {
+  const resolved = img(src);
+  const titleBar = `${(MAC_TITLE_BAR / (1 + MAC_TITLE_BAR)) * 100}%`;
+  const light = (color: string) => (
+    <span
+      style={{
+        width: "1.1%",
+        aspectRatio: "1",
+        borderRadius: "50%",
+        background: color,
+        boxShadow: "inset 0 0 0 0.5px rgba(0,0,0,0.25)",
+        flexShrink: 0,
+      }}
+    />
+  );
+  return (
+    <div style={{ position: "relative", aspectRatio: `${MAC_RATIO}`, ...style }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          // Circular corners: the vertical radius is scaled by the frame aspect.
+          borderRadius: `1.1% / ${1.1 * MAC_RATIO}%`,
+          background: "#1C1C1E",
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12), 0 18px 60px rgba(0,0,0,0.40)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          style={{
+            height: titleBar,
+            boxSizing: "border-box",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75%",
+            padding: "0 1.3%",
+            background: "linear-gradient(180deg, #3D3D40 0%, #323235 100%)",
+            boxShadow: "inset 0 -1px 0 rgba(0,0,0,0.35)",
+            flexShrink: 0,
+          }}
+        >
+          {light("#FF5F57")}
+          {light("#FEBC2E")}
+          {light("#28C840")}
+        </div>
+        <div style={{ flex: 1, overflow: "hidden", background: "#111", minHeight: 0 }}>
           {resolved ? (
             <img
               src={resolved}

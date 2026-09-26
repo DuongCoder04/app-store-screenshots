@@ -1,6 +1,6 @@
 import { DEFAULT_LOCALE } from "./locale";
-import { DEFAULT_THEME_ID, PROJECT_SCHEMA_VERSION } from "./constants";
-import type { Device, ProjectState, Slide } from "./types";
+import { DEFAULT_THEME_ID, PLATFORM_DEVICES, PROJECT_SCHEMA_VERSION } from "./constants";
+import type { Device, Platform, ProjectState, Slide } from "./types";
 
 let _id = 0;
 export const nid = () => `s_${Date.now().toString(36)}_${(_id++).toString(36)}`;
@@ -121,6 +121,18 @@ function tabletStarter(kind: "7" | "10"): Slide[] {
   ];
 }
 
+// Mac is contained like the TV, so "hero" and "device-bottom" would look alike;
+// the split and two-window slides give the wide canvas its rhythm instead.
+function macStarter(): Slide[] {
+  return [
+    { id: nid(), layout: "hero", label: en("MEET YOUR APP"), headline: en("Made for\nyour Mac."), screenshot: "" },
+    { id: nid(), layout: "split-landscape", label: en("FEATURE 01"), headline: en("Everything in\none window."), screenshot: "" },
+    { id: nid(), layout: "device-top", label: en("FEATURE 02"), headline: en("One shortcut away."), screenshot: "", inverted: true },
+    { id: nid(), layout: "two-devices", label: en("FEATURE 03"), headline: en("Work across windows."), screenshot: "", screenshotSecondary: "" },
+    { id: nid(), layout: "no-device", label: en("MORE"), headline: en("And so\nmuch more."), screenshot: "" },
+  ];
+}
+
 function fgStarter(): Slide[] {
   return [
     {
@@ -150,6 +162,7 @@ export const DEFAULT_PROJECT: ProjectState = {
     tvos: tvStarter(),
     watchos: watchStarter(),
     carplay: carplayStarter(),
+    mac: macStarter(),
     "android-7": tabletStarter("7"),
     "android-10": tabletStarter("10"),
     "feature-graphic": fgStarter(),
@@ -166,10 +179,7 @@ export function newSlide(layout: Slide["layout"] = "device-bottom"): Slide {
   };
 }
 
-const IOS_DEVICES: ReadonlySet<Device> = new Set<Device>([
-  "iphone", "ipad", "tvos", "watchos", "carplay",
-]);
-
-export function detectPlatform(device: Device): "ios" | "android" {
-  return IOS_DEVICES.has(device) ? "ios" : "android";
+export function detectPlatform(device: Device): Platform {
+  const platforms = Object.keys(PLATFORM_DEVICES) as Platform[];
+  return platforms.find((p) => PLATFORM_DEVICES[p].includes(device)) ?? "ios";
 }

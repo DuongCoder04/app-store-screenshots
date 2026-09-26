@@ -4,6 +4,7 @@ export type Device =
   | "tvos"
   | "watchos"
   | "carplay"
+  | "mac"
   | "android"
   | "android-7"
   | "android-10"
@@ -11,7 +12,7 @@ export type Device =
 
 export type Orientation = "portrait" | "landscape";
 
-export type Platform = "ios" | "android";
+export type Platform = "ios" | "macos" | "android";
 
 // Layouts the editor can render. Vary across slides for visual rhythm.
 export type SlideLayout =
@@ -20,7 +21,7 @@ export type SlideLayout =
   | "device-top"       // device top, headline bottom (contrast)
   | "two-devices"      // back + front phones, headline above
   | "no-device"        // big headline + decorative blob, no device
-  | "split-landscape"  // landscape tablets only: caption left + device right
+  | "split-landscape"  // landscape tablets + Mac: caption left + device right
   | "feature-graphic"; // 1024×500 banner with icon + name + tagline
 
 // Per-element rect in canvas pixel space. Optional rotation in degrees and zIndex.
