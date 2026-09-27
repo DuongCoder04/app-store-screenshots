@@ -101,6 +101,7 @@ const fixture = (extra = {}) => ({schemaVersion:2,appName:'Bug bash',themeId:'cl
    for(const png of pngs) {
      const bytes=await png.async('nodebuffer'); const [,w,h]=png.name.match(/\/(\d+)x(\d+)\//);
      assert.equal(bytes.readUInt32BE(16),Number(w)); assert.equal(bytes.readUInt32BE(20),Number(h));
+     assert.equal(bytes[25],2,'stores need opaque 24-bit RGB PNGs, not RGBA');
    }
    await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();
    assert.equal(await page.locator('[inert]').count(),0); assert.equal(downloadCount,1); await page.close();
@@ -133,10 +134,10 @@ const fixture = (extra = {}) => ({schemaVersion:2,appName:'Bug bash',themeId:'cl
    await inspector.getByRole('combobox').nth(1).click();
    await page.getByRole('option',{name:'Custom color',exact:true}).click();
    await page.getByRole('textbox',{name:'Custom background hex color',exact:true}).fill('#FFFFFF');
-   const caption=page.locator('main [contenteditable=true]').first();
+   const caption=page.locator('main [contenteditable=plaintext-only]').first();
    assert.equal(await caption.evaluate(el=>getComputedStyle(el).color),'rgb(23, 23, 23)');
    assert.equal(await caption.evaluate(el=>getComputedStyle(el.parentElement.parentElement.parentElement).backgroundColor),'rgb(255, 255, 255)');
-   await page.locator('main [contenteditable=true]').nth(1).focus();
+   await page.locator('main [contenteditable=plaintext-only]').nth(1).focus();
    assert.match(await page.locator('main').innerText(),/Screen 2/);
    assert.equal(await page.locator('textarea').first().inputValue(),'banner two');
    await page.close();
@@ -197,6 +198,94 @@ const fixture = (extra = {}) => ({schemaVersion:2,appName:'Bug bash',themeId:'cl
    const after=await request.get(baseURL+'/api/project');assert.deepEqual((await after.json()).state,payload.state);
    const saved=await request.post(baseURL+'/api/project',{data:payload.state});assert.equal(saved.status(),200);
    const roundTrip=await request.get(baseURL+'/api/project');assert.deepEqual((await roundTrip.json()).state,payload.state);
+   await context.close();
+ });
+ await check('out-of-bounds elements export where the editor shows them',async()=>{
+   const {page}=await open(fixture({connectedCanvas:false,slidesByDevice:{watchos:[slide('a',{textElements:[{id:'t1',text:{en:'WIDE'},transform:{x:300,y:10,width:300,height:80,zIndex:6}}]})]}}));
+   const editorX=await page.locator('main .rnd-editable').last().evaluate(el=>new DOMMatrix(getComputedStyle(el).transform).m41);
+   const exportX=await page.locator('[aria-hidden] [contenteditable=false]').filter({hasText:'WIDE'}).last().evaluate(el=>parseFloat(el.closest('div[style*="z-index"]').style.left));
+   assert.equal(exportX,editorX); await page.close();
+ });
+ await check('clearing inline copy saves nothing and shows the fallback after blur',async()=>{
+   const {page,latest}=await open(fixture({locales:['en','de'],locale:'de',slidesByDevice:{watchos:[slide('a',{headline:{en:'English',de:'Deutsch'}})]}}));
+   const headline=page.locator('main [contenteditable=plaintext-only]').nth(1);
+   await headline.click(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.press('Backspace');
+   await page.locator('textarea').first().click(); await pause(900);
+   assert.equal(latest().slidesByDevice.watchos[0].headline.de,undefined);
+   assert.equal(await headline.textContent(),'English'); await page.close();
+ });
+ await check('overlay text can be cleared and retyped in a non-default locale',async()=>{
+   const {page,latest}=await open(fixture({locales:['en','de'],locale:'de',slidesByDevice:{watchos:[slide('a',{textElements:[{id:'t1',text:{en:'Hello'},transform:{x:10,y:10,width:300,height:80,zIndex:6}}]})]}}));
+   await page.locator('main [contenteditable=plaintext-only]').nth(2).focus();
+   const text=page.getByRole('textbox',{name:'Overlay text',exact:true});
+   assert.equal(await text.inputValue(),''); assert.equal(await text.getAttribute('placeholder'),'Hello');
+   await text.fill('Hallo'); await pause(900);
+   assert.deepEqual(latest().slidesByDevice.watchos[0].textElements[0].text,{en:'Hello',de:'Hallo'}); await page.close();
+ });
+ await check('RTL copy gets its own base direction',async()=>{
+   const {page}=await open(fixture({locales:['en','he'],locale:'he',slidesByDevice:{watchos:[slide('a',{headline:{en:'Hi',he:'שלום עולם!'}})]}}));
+   const headline=page.locator('main [contenteditable=plaintext-only]').nth(1);
+   assert.equal(await headline.evaluate(el=>getComputedStyle(el).direction),'rtl');
+   assert.equal(await page.locator('main [contenteditable=plaintext-only]').first().evaluate(el=>getComputedStyle(el).direction),'ltr'); await page.close();
+ });
+ await check('generated feature-graphic decks normalise without an undo step',async()=>{
+   const {page,latest}=await open(fixture({device:'feature-graphic',slidesByDevice:{'feature-graphic':[slide('one',{layout:'hero'}),slide('two',{layout:'hero'})]}}));
+   await pause(1000);
+   assert.equal(await page.getByRole('button',{name:'Undo',exact:true}).isEnabled(),false);
+   assert.deepEqual(latest().slidesByDevice['feature-graphic'].map(s=>s.layout),['feature-graphic','feature-graphic']); await page.close();
+ });
+ await check('feature graphic app icon can be picked and exports',async()=>{
+   const JSZip=require('../skills/app-store-screenshots/template/node_modules/jszip');
+   const {page,latest}=await open(fixture({device:'feature-graphic',slidesByDevice:{'feature-graphic':[slide('banner',{layout:'feature-graphic'})]}}));
+   const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=64;c.height=64;const x=c.getContext('2d');x.fillStyle='#00ff00';x.fillRect(0,0,64,64);return c.toDataURL().split(',')[1]});
+   await page.route('**/api/upload',route=>route.fulfill({json:{ok:true,path:'/bugbash-icon.png'}}));
+   await page.locator('aside').last().locator('input[type=file]').setInputFiles({name:'icon.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
+   await pause(900); assert.equal(latest().appIcon,'/bugbash-icon.png');
+   const downloaded=page.waitForEvent('download');
+   await page.route('**/bugbash-icon.png',route=>route.fulfill({body:Buffer.from(png,'base64'),contentType:'image/png'}));
+   await page.getByRole('button',{name:'Export bundle',exact:true}).click();
+   const zip=await JSZip.loadAsync(await fs.readFile(await (await downloaded).path()));
+   const image=await Object.values(zip.files).find(f=>f.name.endsWith('.png')).async('base64');
+   const green=await page.evaluate(async data=>{const img=new Image();img.src='data:image/png;base64,'+data;await img.decode();const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.drawImage(img,0,0);const p=x.getImageData(0,0,c.width,c.height).data;let n=0;for(let i=0;i<p.length;i+=4)if(p[i]<30&&p[i+1]>225&&p[i+2]<30)n++;return n},image);
+   assert.ok(green>1000,'icon missing from feature graphic export'); await page.close();
+ });
+ await check('reset all devices keeps project settings and locales',async()=>{
+   const {page,latest}=await open(fixture({appName:'Keep me',themeId:'dark-bold',locales:['en','de'],locale:'de',connectedCanvas:false}));
+   await page.getByRole('button',{name:/reset/i}).first().click();
+   await page.getByRole('button',{name:'Reset all devices',exact:true}).click(); await pause(900);
+   const state=latest();
+   assert.equal(state.appName,'Keep me'); assert.equal(state.themeId,'dark-bold'); assert.deepEqual(state.locales,['en','de']);
+   assert.equal(state.locale,'de'); assert.equal(state.connectedCanvas,false); assert.equal(state.device,'watchos');
+   assert.notEqual(state.slidesByDevice.watchos[0].id,'first'); await page.close();
+ });
+ await check('pasted rich text stays plain on the canvas',async()=>{
+   const context=await browser.newContext({viewport:{width:1600,height:1000}});
+   await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:new URL(baseURL).origin});
+   const page=await context.newPage(); let latest=fixture();
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/api/project',async route=>{if(route.request().method()==='POST')latest=route.request().postDataJSON();await route.fulfill({json:{ok:true,state:latest}})});
+   await page.goto(baseURL); await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();
+   await page.evaluate(async()=>navigator.clipboard.write([new ClipboardItem({'text/html':new Blob(['<span style="color:red;font-size:80px">Pasted</span>'],{type:'text/html'}),'text/plain':new Blob(['Pasted'],{type:'text/plain'})})]));
+   const headline=page.locator('main [contenteditable=plaintext-only]').nth(1);
+   await headline.click(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.press('ControlOrMeta+V'); await pause(900);
+   assert.equal(await headline.evaluate(el=>el.children.length),0); assert.equal(await headline.textContent(),'Pasted');
+   assert.equal(latest.slidesByDevice.watchos[0].headline.en,'Pasted'); await context.close();
+ });
+ await check('export finishes inline when PNG workers fail to load',async()=>{
+   const JSZip=require('../skills/app-store-screenshots/template/node_modules/jszip');
+   const context=await browser.newContext({viewport:{width:1600,height:1000}});
+   // A worker whose script never loads: it reports an error and never replies.
+   await context.addInitScript(()=>{window.Worker=class extends EventTarget{constructor(){super();setTimeout(()=>this.onerror?.(new ErrorEvent('error',{message:'blocked'})),200)}postMessage(){}terminate(){}}});
+   const page=await context.newPage(); let latest=fixture();
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/api/project',async route=>{if(route.request().method()==='POST')latest=route.request().postDataJSON();await route.fulfill({json:{ok:true,state:latest}})});
+   await page.goto(baseURL); await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();
+   const downloaded=page.waitForEvent('download',{timeout:60000});
+   await page.getByRole('button',{name:'Export bundle',exact:true}).click();
+   const zip=await JSZip.loadAsync(await fs.readFile(await (await downloaded).path()));
+   const pngs=Object.values(zip.files).filter(f=>f.name.endsWith('.png'));
+   assert.equal(pngs.length,12);
+   for(const png of pngs) assert.equal((await png.async('nodebuffer'))[25],2);
    await context.close();
  });
  assert.deepEqual(errors,[]);
