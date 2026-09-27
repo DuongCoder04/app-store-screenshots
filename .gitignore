@@ -50,6 +50,7 @@ Thumbs.db
 # Skill template user assets
 skills/app-store-screenshots/template/public/app-icon.png
 skills/app-store-screenshots/template/public/screenshots/**/*.png
+skills/app-store-screenshots/template/public/screenshots/uploaded/
 
 # Temporary files
 *.tmp

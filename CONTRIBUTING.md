@@ -39,7 +39,13 @@ Usually not a fit:
 
 ## Testing Changes
 
-There is no traditional automated test suite in this repository, so use a manual smoke-test checklist.
+The editor regression harness is `scripts/bug-bash.cjs`. Run it against a **disposable copy** of the template with its dev server running. It uses Google Chrome, mocks project state for browser checks, and checks the real project API rejects malformed writes. It covers editor keyboard controls, history, delayed saves/uploads, export sizes/locales, missing assets, connected crops, and feature graphics.
+
+```bash
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/bug-bash.cjs http://localhost:3098
+```
+
+Use an existing Playwright installation or install it outside the repo for this harness. Also run `tsc --noEmit` and the production build in the template. Use the manual checklist below for skill/scaffolding changes.
 
 ### For README-only changes
 
