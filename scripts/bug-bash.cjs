@@ -288,6 +288,178 @@ const fixture = (extra = {}) => ({schemaVersion:2,appName:'Bug bash',themeId:'cl
    for(const png of pngs) assert.equal((await png.async('nodebuffer'))[25],2);
    await context.close();
  });
+ await check('rejected image uploads keep the previous screenshot instead of bypassing validation',async()=>{
+   const {page,latest}=await open(fixture({slidesByDevice:{watchos:[slide('upload',{layout:'hero',screenshot:'/previous.png'})]}}));
+   const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=10;return c.toDataURL().split(',')[1]});
+   await page.route('**/api/upload',route=>route.fulfill({status:400,json:{ok:false,error:'Rejected image'}}));
+   await page.locator('input[type=file]').last().setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
+   await page.getByText('Rejected image',{exact:true}).waitFor();
+   await pause(800); assert.equal(latest().slidesByDevice.watchos[0].screenshot,'/previous.png');
+   await page.close();
+ });
+ await check('corrupt images and fonts are rejected before upload',async()=>{
+   const {page,latest}=await open(fixture({slidesByDevice:{watchos:[slide('upload',{layout:'hero'})]}}));
+   let uploads=0;
+   await page.route('**/api/upload*',route=>{uploads++;return route.fulfill({status:400,json:{ok:false}})});
+   await page.locator('input[type=file]').last().setInputFiles({name:'broken.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgo=','base64')});
+   await page.getByText('Image is corrupt or exceeds 64 megapixels',{exact:true}).waitFor();
+   await page.locator('input[type=file]').first().setInputFiles({name:'broken.woff2',mimeType:'font/woff2',buffer:Buffer.from('wOF2')});
+   await page.getByText('Font import failed',{exact:true}).waitFor();
+   assert.equal(uploads,0);assert.equal(latest().slidesByDevice.watchos[0].screenshot,'');
+   assert.equal(await page.getByRole('button',{name:'Export bundle',exact:true}).isEnabled(),true);await page.close();
+ });
+ await check('HTTP 200 with corrupt image bytes blocks export',async()=>{
+   const {page}=await open(fixture({slidesByDevice:{watchos:[slide('corrupt',{layout:'hero',screenshot:'/corrupt.png'})]}}));
+   await page.route('**/corrupt.png',route=>route.fulfill({contentType:'image/png',body:'not an image'}));
+   let downloads=0;page.on('download',()=>downloads++);
+   await page.getByRole('button',{name:'Export bundle',exact:true}).click();
+   await page.getByText('Export failed',{exact:true}).waitFor();
+   assert.equal(downloads,0);assert.equal(await page.locator('[inert]').count(),0);await page.close();
+ });
+ await check('failed saves can be retried without another edit; dirty edits warn before leaving',async()=>{
+   const {page}=await open();
+   await pause(800);
+   let failing=true,writes=0,latest;
+   await page.route('**/api/project',async route=>{
+     writes++;latest=route.request().postDataJSON();
+     await route.fulfill({status:failing?500:200,json:{ok:!failing,error:failing?'Disk temporarily unavailable':undefined}});
+   });
+   await page.getByRole('textbox',{name:'App name',exact:true}).fill('Unsaved work');
+   const dirty=()=>page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented});
+   assert.equal(await dirty(),true);
+   await page.getByRole('button',{name:'Retry save',exact:true}).waitFor();
+   assert.equal(await dirty(),true); failing=false;
+   await page.getByRole('button',{name:'Retry save',exact:true}).click();
+   await pause(900);assert.equal(writes,2);assert.equal(latest.appName,'Unsaved work');assert.equal(await dirty(),false);
+   await page.close();
+ });
+ await check('older in-flight save advances the revision for newer queued edits',async()=>{
+   const {page}=await open();await pause(800);
+   const headers=[];let count=0;
+   await page.route('**/api/project',async route=>{
+     const n=++count;headers.push(route.request().headers()['if-match']);
+     if(n===1)await pause(1600);
+     await route.fulfill({headers:{etag:`"revision-${n}"`},json:{ok:true}});
+   });
+   await page.getByRole('textbox',{name:'App name',exact:true}).fill('older');await pause(800);
+   await page.getByRole('textbox',{name:'App name',exact:true}).fill('newer');await pause(2200);
+   assert.deepEqual(headers,[undefined,'"revision-1"']);await page.close();
+ });
+ await check('two real editor tabs cannot silently overwrite each other',async()=>{
+   const original=await (await fetch(baseURL+'/api/project')).json();
+   const save=state=>fetch(baseURL+'/api/project',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(state)});
+   const pages=[];
+   try {
+     assert.equal((await save(fixture())).status,200);
+     for(let i=0;i<2;i++){
+       const page=await browser.newPage({viewport:{width:1600,height:1000}});pages.push(page);
+       page.on('pageerror',error=>errors.push(error.message));
+       await page.goto(baseURL);await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();await pause(800);
+     }
+     await pages[0].getByRole('textbox',{name:'App name',exact:true}).fill('Winner');await pause(900);
+     await pages[1].getByRole('textbox',{name:'App name',exact:true}).fill('Keep my edits');
+     await pages[1].getByText(/Project changed in another tab or on disk/).waitFor();
+     assert.equal((await (await fetch(baseURL+'/api/project')).json()).state.appName,'Winner');
+     assert.equal(await pages[1].getByRole('textbox',{name:'App name',exact:true}).inputValue(),'Keep my edits');
+   } finally {for(const page of pages)await page.close();assert.equal((await save(original.state)).status,200);}
+ });
+ await check('silent and throwing PNG workers fall back instead of hanging export',async()=>{
+   for(const mode of ['silent','throw']) {
+     const context=await browser.newContext({viewport:{width:1600,height:1000}});
+     await context.addInitScript(mode=>{window.Worker=class extends EventTarget{postMessage(){if(mode==='throw')throw new Error('cannot post')}terminate(){}}},mode);
+     const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+     await page.route('**/api/project',route=>route.fulfill({json:{ok:true,state:fixture({slidesByDevice:{watchos:[slide('one')]}})}}));
+     await page.goto(baseURL);await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();
+     const downloaded=page.waitForEvent('download',{timeout:45000});
+     await page.getByRole('button',{name:'Export bundle',exact:true}).click();await downloaded;
+     await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();assert.equal(await page.locator('[inert]').count(),0);
+     await context.close();
+   }
+ });
+ await check('a stalled asset cannot keep the editor loading forever',async()=>{
+   const page=await browser.newPage({viewport:{width:1600,height:1000}});
+   const state=fixture({slidesByDevice:{watchos:[slide('one',{layout:'hero',screenshot:'/stalled.png'})]}});
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/api/project',route=>route.fulfill({json:{ok:true,state}}));
+   await page.route('**/stalled.png',()=>{});
+   await page.goto(baseURL,{waitUntil:'domcontentloaded'});
+   await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor({timeout:20000});
+   await page.getByText('Image not found at /stalled.png',{exact:true}).waitFor();await page.close();
+ });
+ await check('a stalled font load releases export controls with an actionable error',async()=>{
+   const page=await browser.newPage({viewport:{width:1600,height:1000}});
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.addInitScript(()=>{
+     document.fonts.load=()=>new Promise(()=>{});
+     const original=window.setTimeout;
+     window.setTimeout=(fn,delay,...args)=>original(fn,delay===15000?250:delay,...args);
+   });
+   const state=fixture({fontId:'self-hosted',importedFont:{src:'/fonts/imported/0123456789abcdef.woff2',format:'woff2'}});
+   await page.route('**/api/project',route=>route.fulfill({json:{ok:true,state}}));
+   await page.route('**/fonts/imported/**',route=>route.abort());
+   await page.goto(baseURL);
+   await page.getByRole('button',{name:'Export bundle',exact:true}).click();
+   await page.getByText(/The screenshot font could not be loaded/).waitFor({timeout:5000});
+   assert.equal(await page.locator('[inert]').count(),0);await page.close();
+ });
+ await check('narrow screens retain a usable canvas and scrollable inspector',async()=>{
+   const {page}=await open();await page.setViewportSize({width:390,height:844});
+   const main=await page.locator('main').boundingBox();assert.ok(main.height>=360);
+   assert.equal(await page.locator('main').evaluate(el=>el.parentElement.scrollHeight>el.parentElement.clientHeight),true);
+   await page.locator('textarea').first().fill('Mobile edit');assert.equal(await page.locator('textarea').first().inputValue(),'Mobile edit');await page.close();
+ });
+ await check('encoding failures are handled while a previous screen is still encoding',async()=>{
+   const context=await browser.newContext({viewport:{width:1600,height:1000}});
+   await context.addInitScript(()=>{
+     window.CompressionStream=class{constructor(){throw new Error('encoder unavailable')}};
+     window.Worker=class extends EventTarget{postMessage({id}){setTimeout(()=>this.onmessage?.({data:{id,error:'worker failed'}}),id<6?2000:0)}terminate(){}};
+   });
+   const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/api/project',route=>route.fulfill({json:{ok:true,state:fixture()}}));
+   await page.goto(baseURL);await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();
+   let downloads=0;page.on('download',()=>downloads++);
+   await page.getByRole('button',{name:'Export bundle',exact:true}).click();
+   await page.getByText('All 12 renders failed',{exact:true}).waitFor();
+   assert.equal(downloads,0);assert.equal(await page.locator('[inert]').count(),0);await context.close();
+ });
+ await check('newest font import wins when responses arrive out of order',async()=>{
+   const {page,latest}=await open();
+   const fontURL=await page.locator('link[as=font]').first().getAttribute('href');
+   const fontBytes=await (await page.request.get(baseURL+fontURL)).body();
+   let count=0;
+   await page.route('**/api/upload-font',async route=>{const n=++count;await pause(n===1?1200:100);await route.fulfill({json:{ok:true,font:{src:`/fonts/imported/${n}.woff2`,format:'woff2'}}})});
+   await page.locator('input[type=file]').first().setInputFiles({name:'Older.woff2',mimeType:'font/woff2',buffer:fontBytes});await pause(200);
+   await page.locator('input[type=file]').first().setInputFiles({name:'Newer.woff2',mimeType:'font/woff2',buffer:fontBytes});await pause(2000);
+   assert.equal(count,2);assert.equal(latest().importedFont.name,'Newer');assert.equal(latest().importedFont.src,'/fonts/imported/2.woff2');await page.close();
+ });
+ await check('real image and font uploads survive reload and export',async()=>{
+   const original=await (await fetch(baseURL+'/api/project')).json();
+   const save=state=>fetch(baseURL+'/api/project',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(state)});
+   const page=await browser.newPage({viewport:{width:1600,height:1000}});
+   page.on('pageerror',error=>errors.push(error.message));
+   try {
+     await save(fixture({slidesByDevice:{watchos:[slide('real upload',{layout:'hero'})]}}));
+     await page.goto(baseURL);await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();
+     const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=80;c.height=120;const x=c.getContext('2d');x.fillStyle='#ee00aa';x.fillRect(0,0,80,120);return c.toDataURL().split(',')[1]});
+     const uploaded=page.waitForResponse(r=>r.url().endsWith('/api/upload')&&r.request().method()==='POST');
+     await page.locator('input[type=file]').last().setInputFiles({name:'real.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
+     assert.equal((await uploaded).status(),200);
+     const fontURL=await page.locator('link[as=font]').first().getAttribute('href');
+     const fontBytes=await (await page.request.get(baseURL+fontURL)).body();
+     await page.locator('input[type=file]').first().setInputFiles({name:'Runtimefont.woff2',mimeType:'font/woff2',buffer:fontBytes});
+     await page.getByText('Imported Runtimefont',{exact:true}).waitFor();await pause(1000);
+     const disk=(await (await fetch(baseURL+'/api/project')).json()).state;
+     assert.ok(disk.slidesByDevice.watchos[0].screenshot.startsWith('/screenshots/uploaded/'));
+     assert.equal(disk.importedFont.name,'Runtimefont');
+     await page.reload();await page.getByRole('button',{name:'Export bundle',exact:true}).waitFor();
+     assert.match(await page.getByRole('combobox',{name:'Screenshot font',exact:true}).innerText(),/Runtimefont/);
+     const downloaded=page.waitForEvent('download');
+     await page.getByRole('button',{name:'Export bundle',exact:true}).click();
+     const JSZip=require('../skills/app-store-screenshots/template/node_modules/jszip');
+     const zip=await JSZip.loadAsync(await fs.readFile(await (await downloaded).path()));
+     assert.equal(Object.values(zip.files).filter(f=>f.name.endsWith('.png')).length,6);
+   } finally {await page.close();await save(original.state);}
+ });
  assert.deepEqual(errors,[]);
  assert.ok(passed>0,'No matching checks');
  console.log(`${passed} browser regression checks passed in Google Chrome.`);

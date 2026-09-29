@@ -28,7 +28,7 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - **Theme picker** - switch palette presets from the toolbar, including one preset per named style.
 - **Platform switcher** - iOS, Mac, and Android tabs keep every deck side by side while sharing the same editor workflow.
 - **Device selector** - iPhone, iPad, Apple TV, Apple Watch, and CarPlay under iOS; Android phone, Android tablets, and the feature graphic under Android. The Mac tab is a single 16:10 Mac deck.
-- **Autosave** - writes to disk through `/api/project` and mirrors to `localStorage` for instant reloads.
+- **Autosave** - writes to disk through `/api/project`, mirrors to `localStorage`, and detects newer disk revisions before overwriting work from another tab or agent. Failed saves can be retried; unsaved edits trigger a warning before leaving.
 - **Export bundle** - downloads a zip organized by platform, device, resolution, and locale.
 
 Tip: when capturing source iPhone screenshots, the 6.1-inch simulator is usually the easiest starting point because it reduces manual image adjustment inside the frames.
@@ -270,7 +270,7 @@ For headlines, `skills/app-store-screenshots/copy-ideas.md` has formulas per sli
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 20.9+
 - One of bun, pnpm, yarn, or npm
 
 ## Contributing

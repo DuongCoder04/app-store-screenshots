@@ -43,9 +43,13 @@ The editor regression harness is `scripts/bug-bash.cjs`. Run it against a **disp
 
 ```bash
 PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/bug-bash.cjs http://localhost:3098
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/ui-bug-bash.cjs http://localhost:3098
+node scripts/api-bug-bash.cjs http://localhost:3098
 ```
 
 Use an existing Playwright installation or install it outside the repo for this harness. Also run `tsc --noEmit` and the production build in the template. Use the manual checklist below for skill/scaffolding changes.
+
+The API harness checks validation, same-origin writes, concurrent save conflicts, bounded request bodies, and real PNG/JPEG/WOFF2 uploads. Run the harnesses sequentially: the API and export harnesses write the disposable server's project file. The browser harness also covers failed-save recovery, corrupt assets, stalled workers, and narrow screens. The UI harness exercises pointer drag/resize, rotation, layers, keyboard reordering, empty states, themes/fonts, touch controls, responsive layouts, and every device/layout combination. Set `BUG_BASH_FILTER` to run a single browser check by name. Repeat the API and upload/export checks against `next start` to catch production-only asset-serving failures.
 
 ### For README-only changes
 
