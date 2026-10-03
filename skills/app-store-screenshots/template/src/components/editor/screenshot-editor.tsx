@@ -64,10 +64,12 @@ export function ScreenshotEditor() {
 
   React.useEffect(() => {
     if (!hydrated) return;
-    if (!activeSlide && currentSlides.length > 0) {
-      setActiveSlideId(currentSlides[0].id);
+    // Pin the default selection to its ID before reordering can change index 0.
+    // A deleted/undone screen falls back to the first remaining screen.
+    if (!currentSlides.some((slide) => slide.id === activeSlideId)) {
+      setActiveSlideId(currentSlides[0]?.id ?? null);
     }
-  }, [hydrated, currentSlides, activeSlide]);
+  }, [hydrated, currentSlides, activeSlideId]);
 
   React.useEffect(() => {
     if (!supportsLandscape(state.device) && state.orientation !== "portrait") {
@@ -166,7 +168,7 @@ export function ScreenshotEditor() {
       setState((prev) => ({
         ...prev,
         slidesByDevice: { ...prev.slidesByDevice, [prev.device]: next },
-      }));
+      }), { coalesce: false });
     },
     [setState],
   );
@@ -186,7 +188,7 @@ export function ScreenshotEditor() {
           ...prev,
           slidesByDevice: { ...prev.slidesByDevice, [dev]: cur.filter((s) => s.id !== id) },
         };
-      });
+      }, { coalesce: false });
       setActiveSlideId((cur) => (cur === id ? fallback?.id || null : cur));
 
       toast("Screen deleted", {
@@ -201,7 +203,7 @@ export function ScreenshotEditor() {
                 ...prev,
                 slidesByDevice: { ...prev.slidesByDevice, [dev]: restored },
               };
-            });
+            }, { coalesce: false });
             setActiveSlideId(snap.id);
           },
         },
@@ -219,7 +221,7 @@ export function ScreenshotEditor() {
           ...prev.slidesByDevice,
           [prev.device]: [...(prev.slidesByDevice[prev.device] || []), slide],
         },
-      }));
+      }), { coalesce: false });
       setActiveSlideId(slide.id);
     },
     [setState],
@@ -335,7 +337,7 @@ export function ScreenshotEditor() {
           ...prev,
           slidesByDevice: { ...prev.slidesByDevice, [prev.device]: next },
         };
-      });
+      }, { coalesce: false });
       if (newId) setActiveSlideId(newId);
     },
     [setState],

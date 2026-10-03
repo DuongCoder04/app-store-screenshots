@@ -39,17 +39,20 @@ Usually not a fit:
 
 ## Testing Changes
 
-The editor regression harness is `scripts/bug-bash.cjs`. Run it against a **disposable copy** of the template with its dev server running. It uses Google Chrome, mocks project state for browser checks, and checks the real project API rejects malformed writes. It covers editor keyboard controls, history, delayed saves/uploads, export sizes/locales, missing assets, connected crops, and feature graphics.
+The canonical product is `skills/app-store-screenshots/template`, which ships the editor and its verification suite. Start with:
 
 ```bash
-PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/bug-bash.cjs http://localhost:3098
-PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/ui-bug-bash.cjs http://localhost:3098
-node scripts/api-bug-bash.cjs http://localhost:3098
+cd skills/app-store-screenshots/template
+bun install --frozen-lockfile
+bun run typecheck
+bun run build
+bun run test:e2e
+SCREENSHOTS_E2E_PRODUCTION=1 bun run test:e2e
 ```
 
-Use an existing Playwright installation or install it outside the repo for this harness. Also run `tsc --noEmit` and the production build in the template. Use the manual checklist below for skill/scaffolding changes.
+The Tester Army configuration launches a disposable template copy and uses installed Google Chrome. Every scaffold contains the same configuration, tests, legacy regression harnesses and CI workflow. Read [the flow matrix](skills/app-store-screenshots/template/docs/testing/e2e.md) for exact coverage and residual gaps.
 
-The API harness checks validation, same-origin writes, concurrent save conflicts, bounded request bodies, and real PNG/JPEG/WOFF2 uploads. Run the harnesses sequentially: the API and export harnesses write the disposable server's project file. The browser harness also covers failed-save recovery, corrupt assets, stalled workers, and narrow screens. The UI harness exercises pointer drag/resize, rotation, layers, keyboard reordering, empty states, themes/fonts, touch controls, responsive layouts, and every device/layout combination. Set `BUG_BASH_FILTER` to run a single browser check by name. Repeat the API and upload/export checks against `next start` to catch production-only asset-serving failures.
+The original `scripts/{bug-bash,ui-bug-bash,api-bug-bash}.cjs` commands remain compatibility entry points. Only run them against a disposable editor server; they write its project and upload assets. The API and export harnesses must run sequentially. Set `BUG_BASH_FILTER` for one browser check.
 
 ### For README-only changes
 

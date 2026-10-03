@@ -37,3 +37,11 @@ Covered the editor UI, canvas interactions, persistence, uploads, exports, local
 ## Scope limits
 
 This is a broad regression pass, not proof that every possible failure is eliminated. Browser coverage is Google Chrome; touch checks use Chrome emulation. The local API still assumes one server process. CLI callers that omit `If-Match` retain unconditional replacement behavior. Font API validation checks container structure; full font decoding is additionally checked by the editor's browser.
+
+## Tester Army follow-up — 2026-10-03
+
+The canonical editor template now ships Tester Army configuration, 23 direct browser/API tests, three wrappers for the existing 56 regression groups, and Chrome CI in each scaffold. Final dev and production runs each passed all 26 selected tests with no skips or retries.
+
+Fixed three additional issues: Undo after a rapid screen add could erase the preceding copy edit, reordering the initially selected screen could silently change the inspector selection, and cold dev page compilation after API-only traffic crashed on the Tailwind config's CommonJS `require`. Updated Next 16.3.6 to the 16.3.8 security release and validated build/type compatibility. The config failure was independently reported by Luna, reproduced in an isolated server, and repaired with a static ESM import; its root API harness then passed all nine groups.
+
+See [the current flow matrix and evidence](skills/app-store-screenshots/template/docs/testing/e2e.md) for exact commands, counts, retained red/green reports and verification limits.

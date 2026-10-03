@@ -56,3 +56,6 @@ skills/app-store-screenshots/template/public/screenshots/uploaded/
 *.tmp
 *.temp
 .cache/
+
+# Tester Army reports and recordings
+.e2e/

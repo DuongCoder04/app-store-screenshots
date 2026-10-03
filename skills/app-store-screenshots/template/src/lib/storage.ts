@@ -343,7 +343,8 @@ export function useProject() {
   // an edit, so it neither takes an undo step nor clears redo. Undo still
   // restores the snapshot's device, which takes you to the deck the undone
   // edit was made on.
-  const setState = useCallback((updater: Updater, options?: { history?: boolean }) => {
+  // Structural actions form their own step and end the typing/slider group.
+  const setState = useCallback((updater: Updater, options?: { history?: boolean; coalesce?: boolean }) => {
     const prev = stateRef.current;
     const next = applyUpdater(updater, prev);
     if (next === prev) return;
@@ -353,12 +354,12 @@ export function useProject() {
       lastPushAt.current = 0;
     } else {
       const now = Date.now();
-      if (now - lastPushAt.current > COALESCE_MS) {
+      if (options?.coalesce === false || now - lastPushAt.current > COALESCE_MS) {
         pastRef.current.push(prev);
         if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
       }
       futureRef.current.length = 0;
-      lastPushAt.current = now;
+      lastPushAt.current = options?.coalesce === false ? 0 : now;
     }
     commit(next);
   }, [commit]);
@@ -384,7 +385,7 @@ export function useProject() {
   // "Reset all devices" resets the decks only. App name, theme, font, icon and
   // especially `locales` (which has no editor UI) are project settings.
   const reset = useCallback(() => {
-    setState((prev) => ({ ...prev, slidesByDevice: DEFAULT_PROJECT.slidesByDevice }));
+    setState((prev) => ({ ...prev, slidesByDevice: DEFAULT_PROJECT.slidesByDevice }), { coalesce: false });
   }, [setState]);
 
   const resetDevice = useCallback((device: Device) => {
@@ -394,7 +395,7 @@ export function useProject() {
         ...prev.slidesByDevice,
         [device]: DEFAULT_PROJECT.slidesByDevice[device],
       },
-    }));
+    }), { coalesce: false });
   }, [setState]);
 
   return {

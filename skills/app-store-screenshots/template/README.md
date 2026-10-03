@@ -101,3 +101,19 @@ These routes are for a local editor running in one server process. They have no 
 Uploads are written atomically. Project and upload requests time out after 15 seconds in the editor; image preloads after 10 seconds. Export also stops with a retryable error if font loading takes longer than 15 seconds. Failed preloads can be retried on export, and failed or stalled PNG workers finish through the inline encoder.
 
 The `/screenshots/uploaded/[filename]` and `/fonts/imported/[filename]` routes serve uploads created after server startup, including with `next start`. They accept only the generated hash filenames and supported extensions, preserving the same asset URLs and on-disk locations as the dev server.
+
+## Automated verification
+
+The scaffold includes [Tester Army](https://github.com/tester-army/e2e), pinned to `e2e@0.16.0`, `@e2e-dev/web@0.11.2` and `playwright@1.63.0`. Tests require Node.js 22.12 or newer and installed **Google Chrome**. No model account or API key is needed for the deterministic suite.
+
+```bash
+bun install --frozen-lockfile
+bun run typecheck
+bun run build
+bun run test:e2e
+SCREENSHOTS_E2E_PRODUCTION=1 bun run test:e2e
+```
+
+The runner creates a disposable template copy on port 4312 and removes it after shutdown. Project saves, uploads and fonts go into that copy. It refuses an occupied port; set `SCREENSHOTS_E2E_PORT` to choose another. It never reuses your active editor server. Dev verification uses Next's webpack mode because Turbopack cannot resolve the temporary copy's dependency symlink. Production verification uses the template's existing `.next` build.
+
+Reports, ZIP downloads, failure screenshots and traces are under `.e2e/`; harness logs are in `.e2e/logs/`. `bun run test:e2e:list` lists every selected test. The shipped GitHub workflow runs both dev and production verification using Google Chrome. See [the flow matrix](docs/testing/e2e.md) for coverage and limits.
