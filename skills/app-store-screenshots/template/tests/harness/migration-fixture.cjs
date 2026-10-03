@@ -84,7 +84,7 @@ function migrateSlide(slide, used) {
   const rawTransforms = slide.transforms && typeof slide.transforms === "object" ? slide.transforms : {};
   for (const [id, transform] of Object.entries(rawTransforms)) {
     const cleaned = cleanTransform(transform);
-    if (["caption", "device", "deviceSecondary"].includes(id) && cleaned) transforms[id] = cleaned;
+    if (["caption", "device", "deviceSecondary", "callout"].includes(id) && cleaned) transforms[id] = cleaned;
   }
   const textIds = new Set();
   const textElements = Array.isArray(slide.textElements)
@@ -126,6 +126,8 @@ function migrateSlide(slide, used) {
     ...(Object.keys(transforms).length ? { transforms } : { transforms: undefined }),
     ...(textElements && textElements.length ? { textElements } : { textElements: undefined }),
     ...(imageElements && imageElements.length ? { imageElements } : { imageElements: undefined }),
+    // The editor clamps magnifier values on load; only a non-object would be rejected.
+    callout: slide.callout && typeof slide.callout === "object" && !Array.isArray(slide.callout) ? slide.callout : undefined,
   };
 }
 

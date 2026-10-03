@@ -6,8 +6,9 @@ import { cleanImportedFont } from "./clean-imported-font";
 import { DEFAULT_PROJECT } from "./defaults";
 import { coerceLocalized } from "./locale";
 import { projectValidationError } from "./project-validation";
+import { cleanCallout, cleanLook, cleanScene } from "./scene";
 import { cleanTypography } from "./typography";
-import type { Device, ElementTransform, ImageElement, ProjectState, ScreenshotFontId, Slide, TextElement } from "./types";
+import type { Device, ElementTransform, ImageElement, Look, ProjectState, ScreenshotFontId, Slide, TextElement } from "./types";
 
 const HISTORY_LIMIT = 50;
 // Coalesce rapid edits (typing, slider drags) into a single undo step.
@@ -112,6 +113,7 @@ function migrateSlide(slide: Slide): Slide {
   const imageElements = Array.isArray(slide.imageElements)
     ? slide.imageElements.map(cleanImageElement).filter((image): image is ImageElement => !!image)
     : undefined;
+  const callout = cleanCallout(slide.callout);
 
   return {
     ...slide,
@@ -122,6 +124,7 @@ function migrateSlide(slide: Slide): Slide {
     ...(transforms && Object.keys(transforms).length > 0 ? { transforms } : { transforms: undefined }),
     ...(textElements && textElements.length > 0 ? { textElements } : { textElements: undefined }),
     ...(imageElements && imageElements.length > 0 ? { imageElements } : { imageElements: undefined }),
+    ...(callout ? { callout } : { callout: undefined }),
   };
 }
 
@@ -137,6 +140,10 @@ function mergeWithDefaults(parsed: Partial<ProjectState>): ProjectState {
       ? parsed.themeId
       : DEFAULT_PROJECT.themeId;
   const importedFont = cleanImportedFont(parsed.importedFont);
+  const scene = cleanScene(parsed.scene);
+  const savedLooks = Array.isArray(parsed.savedLooks)
+    ? parsed.savedLooks.map(cleanLook).filter((look): look is Look => !!look)
+    : [];
   const fontId = cleanFontId(parsed.fontId, !!importedFont);
   const slidesByDevice = parsed.slidesByDevice
     ? Object.fromEntries(
@@ -162,6 +169,8 @@ function mergeWithDefaults(parsed: Partial<ProjectState>): ProjectState {
     themeId,
     fontId,
     ...(importedFont ? { importedFont } : { importedFont: undefined }),
+    ...(scene ? { scene } : { scene: undefined }),
+    ...(savedLooks.length > 0 ? { savedLooks } : { savedLooks: undefined }),
     connectedCanvas,
     slidesByDevice: {
       ...DEFAULT_PROJECT.slidesByDevice,

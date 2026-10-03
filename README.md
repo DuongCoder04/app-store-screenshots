@@ -26,6 +26,9 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - **Screen sidebar** - add, select, and drag-to-reorder screens with live thumbnails.
 - **Inspector** - edit layout, labels, headlines, screenshots, element stacking, and transforms from the right panel. A **Copy ideas** menu next to the headline drops in a proven formula to rewrite.
 - **Theme picker** - switch palette presets from the toolbar, including one preset per named style.
+- **Style Lab** - see four complete looks for your deck side by side (palette, type, layout rhythm and scene), keep the parts you like with Colors/Type/Layout/Scene locks, shuffle or remix the rest, save favourites, apply one as a single undoable edit, and export a comparison image.
+- **Scene Playground** - restyle every screen at once: backdrops (gradient, solid, aurora, spotlight, grid, dots, ruled) that can flow across the whole strip, decorations, device shadow, glow and 3D tilt, and headline weight, case and alignment.
+- **Magnifier** - add a loupe to any screen that zooms into one detail of its screenshot; aim it on a thumbnail, set the zoom and shape, and drag it anywhere.
 - **Platform switcher** - iOS, Mac, and Android tabs keep every deck side by side while sharing the same editor workflow.
 - **Device selector** - iPhone, iPad, Apple TV, Apple Watch, and CarPlay under iOS; Android phone, Android tablets, and the feature graphic under Android. The Mac tab is a single 16:10 Mac deck.
 - **Autosave** - writes to disk through `/api/project`, mirrors to `localStorage`, and detects newer disk revisions before overwriting work from another tab or agent. Failed saves can be retried; unsaved edits trigger a warning before leaving.
@@ -161,7 +164,8 @@ The template README inside `skills/app-store-screenshots/template/README.md` doc
 3. Run the dev server and open the editor.
 4. Use the sidebar to organize screens and the inspector to edit copy, layouts, screenshots, and elements.
 5. Choose Connected or Isolated mode depending on whether elements should cross screen boundaries.
-6. Click **Export bundle** to download store-ready PNGs.
+6. Open **Style Lab** to compare complete looks, or **Scene** to tune backdrop, depth and headline style by hand.
+7. Click **Export bundle** to download store-ready PNGs.
 
 Uploaded files are saved under `public/screenshots/uploaded/`, and the canonical deck state is saved in `app-store-screenshots.json`. Commit both to make the deck reproducible after a fresh clone.
 
@@ -210,7 +214,7 @@ Screenshots are designed at the largest size for each device and scaled down for
 
 ## Project State
 
-- `app-store-screenshots.json` is the source of truth for app name, active platform, active device, locales, theme, connected-canvas mode, slides, screenshot paths, and transforms.
+- `app-store-screenshots.json` is the source of truth for app name, active platform, active device, locales, theme, connected-canvas mode, scene, saved Style Lab looks, slides, screenshot paths, magnifiers, and transforms.
 - Runtime uploads are written to `public/screenshots/uploaded/<hash>.png`.
 - The editor reads `localStorage` first for fast paint, then reconciles with the project file.
 - Older project files are migrated to schema v2 on load while keeping legacy decks isolated unless connected mode was already enabled.

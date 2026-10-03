@@ -33,6 +33,7 @@ import { Inspector } from "./inspector";
 import { PreviewStage } from "./preview-stage";
 import { Sidebar } from "./sidebar";
 import { DeckCanvas, getCanvas } from "./slide-canvas";
+import { StyleLab } from "./style-lab";
 import { Toolbar } from "./toolbar";
 
 export function ScreenshotEditor() {
@@ -47,6 +48,10 @@ export function ScreenshotEditor() {
   const exportInProgress = React.useRef(false);
   const [exportProject, setExportProject] = React.useState<ProjectState | null>(null);
   const exportRef = React.useRef<HTMLDivElement | null>(null);
+  const [styleLabOpen, setStyleLabOpen] = React.useState(false);
+  // The latest committed project, for actions that must check nothing changed since.
+  const latestState = React.useRef(state);
+  latestState.current = state;
 
   const currentSlides = state.slidesByDevice[state.device] || [];
   const activeSlide =
@@ -668,6 +673,9 @@ export function ScreenshotEditor() {
         setThemeId={(v) => setState((p) => ({ ...p, themeId: v }))}
         connectedCanvas={state.connectedCanvas}
         setConnectedCanvas={(v) => setState((p) => ({ ...p, connectedCanvas: v }))}
+        scene={state.scene}
+        setScene={(scene) => setState((p) => ({ ...p, scene }))}
+        onOpenStyleLab={() => setStyleLabOpen(true)}
         fontId={fontId}
         setFontId={(v) => setState((p) => ({ ...p, fontId: v }))}
         importedFont={state.importedFont}
@@ -714,6 +722,7 @@ export function ScreenshotEditor() {
             appIcon={state.appIcon}
             fontFamily={fontFamily}
             connectedCanvas={state.connectedCanvas}
+            scene={state.scene}
             disabled={busy}
             onReorder={reorderSlides}
             onSelect={setActiveSlideId}
@@ -736,6 +745,7 @@ export function ScreenshotEditor() {
               appIcon={state.appIcon}
               fontFamily={fontFamily}
               connectedCanvas={state.connectedCanvas}
+              scene={state.scene}
               selectedElement={selectedElement}
               onActiveSlideChange={setActiveSlideId}
               onLabelChange={(slide, v) => patchLocalized(slide, "label", v)}
@@ -783,6 +793,31 @@ export function ScreenshotEditor() {
         </aside>
       </div>
 
+      <StyleLab
+        open={styleLabOpen}
+        onOpenChange={setStyleLabOpen}
+        state={state}
+        onApply={(next, look) => {
+          setState(next, { coalesce: false });
+          setSelectedElement(null);
+          toast.success(`Applied ${look.name}`, {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                // Only undo the look itself, never an edit made after it.
+                if (latestState.current === next) undo();
+                else toast("Use the toolbar Undo", { description: "You've edited the deck since applying this look." });
+              },
+            },
+            duration: 8000,
+          });
+        }}
+        onSavedLooksChange={(savedLooks) =>
+          // A look library, not a deck edit: keep it out of undo history.
+          setState((p) => ({ ...p, savedLooks: savedLooks.length ? savedLooks : undefined }), { history: false })
+        }
+      />
+
       {/* Off-screen export container — full-resolution canvases for html-to-image. */}
       <div
         aria-hidden
@@ -824,6 +859,7 @@ export function ScreenshotEditor() {
                 appIcon={exportState.appIcon}
                 fontFamily={SCREENSHOT_FONTS[exportState.fontId || DEFAULT_SCREENSHOT_FONT_ID].family}
                 connectedCanvas={exportState.connectedCanvas}
+                scene={exportState.scene}
                 hideEmpty
               />
             </div>

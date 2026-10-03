@@ -15,7 +15,7 @@ bun run test:e2e
 SCREENSHOTS_E2E_PRODUCTION=1 bun run test:e2e
 ```
 
-`bun run test:e2e` runs 26 tests: 23 tests that directly drive/inspect the product with Tester Army, plus three tests that run 56 existing regression groups (35 browser/export, 12 UI, nine API). Nested loops cover every advertised device size, layout, orientation, theme and built-in font. Counts refer to test/group definitions, not every loop iteration.
+`bun run test:e2e` runs 37 tests: 34 tests that directly drive/inspect the product with Tester Army (23 in `tests/editor.e2e.ts`, 11 for Style Lab, Scene Playground and the magnifier in `tests/scene-style-lab.e2e.ts`), plus three tests that run 56 existing regression groups (35 browser/export, 12 UI, nine API). Nested loops cover every advertised device size, layout, orientation, theme and built-in font. Counts refer to test/group definitions, not every loop iteration.
 
 For one direct regression:
 
@@ -71,6 +71,9 @@ Use the default output directory for this suite's ZIP-content checks; the publis
 | Export lock, progress, failure and fallback | Harness editor becomes inert immediately through ZIP completion, downloads once, unlocks; missing/corrupt/stalled assets/font fail with actionable messages; failing/silent/throwing workers use inline encoder; encoding failure is observed safely. |
 | Narrow viewport, touch, keyboard access | Direct 390px layout and keyboard reordering; UI harness 390–1440px screenshots/layout, scrollable inspector, touch actions without hover, keyboard canvas image focus and Fit active screen recentering. |
 | API inputs, origin, limits, asset serving and migration | Direct invalid project/no mutation, stale conflict, corrupt image/font and foreign origins; API harness exact JSON type/origin, request byte limits including chunked upload, concurrent atomic uploads, runtime filename/traversal rejection and legacy migration. Root repository reads the live skill migration; standalone scaffold uses the bundled recipe fixture. |
+| Scene Playground | Direct backdrop/flow/decoration/tilt/case edits render on every screen, persist, undo/redo as one step and reset to the classic scene; ZIP test decodes a tilted, glowing, spotlit export at exact size; a flowing spotlight deck is checked for equal brightness on every exported screen. |
+| Style Lab looks, locks, saved looks, comparison | Direct four-look listing, Apply as one undo step keeping copy and layouts restorable, Colors/Layout locks across Shuffle, all-locked disables Shuffle, per-screen headline sizes survive a look, the Apply toast's Undo refuses to revert a later edit, saved looks survive reload/apply/remove, comparison PNG download is a real tall PNG. |
+| Magnifier | Direct add, keyboard focus, zoom, shape, remove; ZIP export with a magnifier; partial callouts accepted by the API and completed; malformed scene/savedLooks/callout rejected; out-of-range values clamped on load. |
 | Reset and cancel reset | Harness reset-all preserves app/theme/locales, editor confirmation allows cancellation; structural reset has separate undo boundary. |
 
 ## Bugs fixed and evidence
