@@ -6,8 +6,12 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const source = path.resolve(__dirname, '..');
 const workspace = mkdtempSync(path.join(tmpdir(), 'screenshots-e2e-'));
+// Apple bezels a user added to public/frames/ are left out too, so every
+// machine tests the same product as a fresh clone (they're gitignored).
 cpSync(source, workspace, { recursive: true, filter: p => {
-  const first = path.relative(source, p).split(path.sep)[0];
+  const rel = path.relative(source, p);
+  const first = rel.split(path.sep)[0];
+  if (path.dirname(rel) === path.join('public', 'frames') && rel.endsWith('.png')) return false;
   return !['node_modules', '.next', '.e2e', '.git', 'tests', 'e2e-army'].includes(first);
 }});
 symlinkSync(path.join(source, 'node_modules'), path.join(workspace, 'node_modules'), 'dir');
