@@ -347,10 +347,10 @@ export function IPad({ src, alt = "", style, hideEmpty }: FrameProps) {
 }
 
 // ---------- iPhone Duo ----------
-// Geometry comes from the user's own copy of Apple's bezel (measured by
+// Geometry comes from Apple's bezel in public/frames/ (measured by
 // /api/frames) or, without one, a drawn frame whose screen has the capture's
 // exact aspect. The frame fits itself inside whatever box it is given, so a
-// placement saved before a bezel was added never stretches it.
+// placement saved with a different bezel never stretches it.
 
 // A capture whose aspect is off by more than this is letterboxed rather than
 // cropped: cropping would cut real UI, which is worse than a visible bar.

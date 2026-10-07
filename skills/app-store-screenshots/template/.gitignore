@@ -17,6 +17,3 @@ public/fonts/imported/*
 # Tester Army output
 .e2e/
 
-# iPhone Duo bezels from Apple Design Resources. Apple's licence forbids
-# redistributing them, so each user adds their own copy (see README).
-public/frames/*.png

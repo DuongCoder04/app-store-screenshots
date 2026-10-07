@@ -388,7 +388,7 @@ Ask the user these. Do not proceed until you have answers:
 6. **Target stores** — Apple App Store, Mac App Store, Google Play, or a mix? Determines which platform decks to seed.
 7. **iPad / Mac / Android tablet screenshots** — If yes, what sizes and orientations?
 8. **Apple TV / Apple Watch / CarPlay** — Does the app have a tvOS or watchOS app, or CarPlay support? Each gets its own deck.
-9. **iPhone Duo** — Does the app support iPhone Duo? If so, read `iphone-duo.md` before planning. Ask: what does the app do differently on the inner display (two panes, sidebar, wider grid)? Which displays and orientations have their own layout? Do they have simulator captures from each display at the exact sizes? Do they have Apple's bezels (see Step 5)? Download them and accept Apple's licence only if the user explicitly asks you to; never bundle or commit them.
+9. **iPhone Duo** — Does the app support iPhone Duo? If so, read `iphone-duo.md` before planning. Ask: what does the app do differently on the inner display (two panes, sidebar, wider grid)? Which displays and orientations have their own layout? Do they have simulator captures from each display at the exact sizes? Apple's bezels for iPhone, iPad, Watch, TV, Mac and iPhone Duo ship with the template (see Step 5); ask only whether they want a different finish.
 10. **App Store creative assets** — Do they want a product page header / search results asset? Default to one universal 5244×2950 asset; offer separate header and search assets only if they need different compositions. Ask for a short brand line for each; don't reuse a screenshot headline.
 11. **Feature Graphic** — Want a 1024×500 Play Store banner too?
 12. **Localized screenshots** — Languages? (e.g. en, de, es, pt, ja, ar, he)
@@ -433,7 +433,7 @@ Move the user's screenshots into the layout the template expects:
 public/
 ├── app-icon.png                      # ← user's app icon
 ├── mockup.png                        # ← already copied by the template (iPhone bezel)
-├── frames/                           # ← optional: the user's own Apple bezels (Step 5)
+├── frames/                           # ← Apple's bezels, bundled; swap a file to change finish (Step 5)
 └── screenshots/
     ├── apple/
     │   ├── iphone/{locale}/01.png … N.png
@@ -711,18 +711,17 @@ Every Apple TV and Apple Watch size below was read from App Store Connect's own 
   - Turned poses turn the phone **left**, so the outer display's camera matches Apple's landscape bezel.
   - Real captures keep the camera corner clear: iOS puts the time and status on a rail below the camera. A capture whose title sits under the camera is either hand-made or taken turned the wrong way.
   - Portrait-only iPhone apps have no outer landscape: skip that deck.
-- **Apple's bezels are the user's own download.** Apple's product bezels (Apple Design Resources → Product Bezels, one `.dmg` per product) are licensed for mock-ups of apps for Apple platforms only, with no redistribution.
-  - Download them and accept the licence (it appears when a `.dmg` is opened) **only when the user explicitly asks you to do that on their behalf**. Show them the licence's key terms when you do.
-  - Never commit or bundle the bezels.
-  - Copy the PNGs into `public/frames/` under the names in the template README's "Real bezels" table:
-    - `iphone-portrait` (iPhone 18 Pro Max)
-    - `ipad-portrait` (iPad Pro 13")
-    - `watch` (Ultra 3)
+- **Apple's bezels ship with the template** in `public/frames/`, taken from Apple Design Resources → Product Bezels. Like fastlane frameit, the template bundles them.
+  - **Licence:** Apple licenses them for mock-ups of apps for Apple platforms only. Never use them in Android decks.
+  - **Bundled files:**
+    - `iphone-portrait` (iPhone 18 Pro Max, Black)
+    - `ipad-portrait` (iPad Pro 13", Space Black)
+    - `watch` (Ultra 3, Ocean Band)
     - `tv` (Apple TV 4K)
-    - `mac` (MacBook Air 15")
-    - `duo-outer-portrait`, `duo-inner-portrait`, and optionally the `-landscape` variants
-  - The editor measures each file's transparent screen cutout and uses the bezel for that device; the App Store creatives use the iPhone bezel. `public/frames/*.png` is gitignored.
-  - Without a file, Duo uses a drawn frame and every other device keeps its built-in frame. Android and CarPlay never use Apple bezels.
+    - `mac` (MacBook Air 15", Midnight)
+    - `duo-outer-portrait`, `duo-outer-landscape`, `duo-inner-portrait` and `duo-inner-landscape` (Night Sky)
+  - **Another finish or model:** replace the file with another PNG from Apple's pack under the same name. The editor measures each file's transparent screen cutout per corner, and uses the bezel for that device; the App Store creatives use the iPhone bezel.
+  - **Without a file:** Duo uses a drawn frame and every other device keeps its built-in frame. Android and CarPlay never use Apple bezels.
 
 ### App Store creative assets
 
@@ -784,7 +783,7 @@ Every Apple TV and Apple Watch size below was read from App Store Connect's own 
 | Reset wiped the deck | Reset clears in-memory state and re-saves defaults to `app-store-screenshots.json`. Recover by `git checkout app-store-screenshots.json` if it was committed, or export first before resetting. |
 | Export is blank | Check the export toast for a "may be missing" warning and re-export; otherwise the source PNG probably has alpha — flatten to RGB |
 | Looked for a CarPlay slot in App Store Connect | There isn't one — upload CarPlay shots into the iPhone slot |
-| Committed or bundled Apple's bezels | Remove them: the licence forbids redistribution. The user keeps their own copy in gitignored `public/frames/` |
+| Used an Apple bezel on an Android deck | Apple licenses its bezels for Apple platforms only; Android decks keep the built-in frames |
 | Turned a Duo portrait deck into landscape by editing transforms | Use the Orientation menu: landscape is a separate deck, so both compositions survive |
 | Resized iPhone captures to Duo sizes, or used the inner capture on the outer deck | Capture each display in Xcode 27.1's simulator at its exact size (`scripts/capture-iphone-duo.sh`); the editor letterboxes anything else |
 | The bezel's camera covers the clock or a title on an outer-display slide | The capture isn't real, or the phone was turned right. Real captures put the status rail under the camera; capture turned poses turned left |

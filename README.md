@@ -121,7 +121,7 @@ project/
 ├── public/
 │   ├── mockup.png
 │   ├── app-icon.png
-│   ├── frames/                 # your Apple bezels (gitignored, optional)
+│   ├── frames/                 # Apple's device bezels (bundled)
 │   └── screenshots/
 │       ├── apple/
 │       │   ├── iphone/{locale}/01.png
@@ -195,7 +195,7 @@ Uploaded files are saved under `public/screenshots/uploaded/`, and the canonical
 
 App Store Connect has no CarPlay screenshot slot: CarPlay shots are uploaded into the iPhone slot, so the CarPlay deck exports landscape iPhone sizes with a head-unit frame.
 
-Each iPhone Duo display and orientation has its own deck, so portrait and landscape keep independent compositions. Landscape decks make the device the hero under a one-line headline, and **Folded + open** pairs the closed phone with the opened one. [`iphone-duo.md`](skills/app-store-screenshots/iphone-duo.md) has the design research and the rules the skill follows: the displays, what real Duo captures look like, and what the first published sets do. Use real captures from each display: a capture from another display is letterboxed, never cropped or stretched, and the editor says so. Apple's product bezels ([Apple Design Resources](https://developer.apple.com/design/resources/)) are licensed for mock-ups but not for redistribution, so they aren't bundled. Download them yourself and copy the PNGs into the project's `public/frames/`. The editor measures their screen cutouts and draws iPhone, iPad, Apple Watch, Apple TV, Mac and iPhone Duo in Apple's own frames. Without them, iPhone Duo gets a drawn frame whose screen matches the capture exactly, and the other devices keep their built-in frames. See the [template README](skills/app-store-screenshots/template/README.md#iphone-duo) for the file names.
+Each iPhone Duo display and orientation has its own deck, so portrait and landscape keep independent compositions. Landscape decks make the device the hero under a one-line headline, and **Folded + open** pairs the closed phone with the opened one. [`iphone-duo.md`](skills/app-store-screenshots/iphone-duo.md) has the design research and the rules the skill follows: the displays, what real Duo captures look like, and what the first published sets do. Use real captures from each display: a capture from another display is letterboxed, never cropped or stretched, and the editor says so. Apple's product bezels from [Apple Design Resources](https://developer.apple.com/design/resources/) ship in the template's `public/frames/`, so iPhone, iPad, Apple Watch, Apple TV, Mac and iPhone Duo are drawn in Apple's own frames. The editor measures each frame's screen cutout. Swap a file for another finish from Apple's pack. Apple licenses the bezels for mock-ups of apps for Apple platforms only. See the [template README](skills/app-store-screenshots/template/README.md#iphone-duo) for the file names.
 
 ### App Store creative assets
 
@@ -226,7 +226,7 @@ Mac has its own **Mac** tab because App Store Connect lists macOS as a separate 
 | 10" tablet landscape | 2560 x 1600 |
 | Feature graphic | 1024 x 500 |
 
-Screenshots are designed at the largest size for each device and scaled down for smaller exports. Every export waits until each screenshot has actually painted (Safari/WebKit decodes them asynchronously) and warns instead of silently writing a blank device. Android, iPad, Apple TV, Apple Watch, CarPlay and Mac frames are CSS-rendered, iPhone uses the included `mockup.png` bezel, and iPhone Duo uses your own copy of Apple's bezels or a drawn stand-in. Every PNG is opaque 24-bit RGB with no alpha channel.
+Screenshots are designed at the largest size for each device and scaled down for smaller exports. Every export waits until each screenshot has actually painted (Safari/WebKit decodes them asynchronously) and warns instead of silently writing a blank device. Android, iPad, Apple TV, Apple Watch, CarPlay and Mac frames are CSS-rendered, iPhone uses the included `mockup.png` bezel, and Apple devices use Apple's bundled bezels. Every PNG is opaque 24-bit RGB with no alpha channel.
 
 ## Project State
 

@@ -229,9 +229,9 @@ ASO write-ups add a few more rules, unproven but consistent with this:
   the other.
 - **Never crop the trailing rail off a capture.** It is where the app's controls
   live.
-- **Never download Apple's bezels or accept their licence for the user unless
-  they explicitly ask, and never commit them.** The licence allows mock-ups only,
-  with no redistribution. See SKILL.md Step 5.
+- **Never use Apple's bezels outside Apple-platform mock-ups.** The template
+  bundles them (see SKILL.md Step 5). Apple licenses them only for mock-ups of
+  apps for Apple platforms, so never use them for Android.
 
 ### QA before export
 

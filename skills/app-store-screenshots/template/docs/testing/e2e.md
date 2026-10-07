@@ -155,7 +155,7 @@ This pass added Duo-specific placements, the **Folded + open** pair and new star
 
 ### Apple bezels (7 October 2026)
 
-The editor now draws iPhone, iPad, Apple Watch, Apple TV, Mac, App Store creatives and iPhone Duo under Apple's own bezels when they are in `public/frames/` (see the template README, Real bezels). The test server (`e2e-army/server.cjs`) leaves `public/frames/*.png` out of its disposable workspace, so every machine tests the same product as a fresh clone. With the bezels copied in, Scene Playground steps took longer than the 500 ms undo-grouping window under the harness, which made the undo test depend on the machine.
+The editor now draws iPhone, iPad, Apple Watch, Apple TV, Mac, App Store creatives and iPhone Duo under Apple's own bezels when they are in `public/frames/` (see the template README, Real bezels). The bezels are now bundled in `public/frames/`, so the test server copies them and every suite run covers the shipped frames. With them in place, Scene Playground steps first took longer than the 500 ms undo-grouping window. The cause: `DeviceDepth` changed its element tree when shadow, glow or tilt toggled, remounting every frame and re-decoding its bezel. The wrapper is now always the same shape, and the undo test passes with the bezels in place.
 
 | Check | Result |
 | --- | --- |

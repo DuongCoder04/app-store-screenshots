@@ -6,7 +6,7 @@ import { FRAME_FILES } from "@/lib/frame-assets";
 export const dynamic = "force-dynamic";
 
 // Served at runtime: Next's production public-file index only covers files
-// that existed at build time, and bezels are added by the user afterwards.
+// that existed at build time, and bezels may be swapped afterwards.
 export async function GET(_req: Request, context: { params: Promise<{ filename: string }> }) {
   const { filename } = await context.params;
   const name = filename.replace(/\.png$/, "");

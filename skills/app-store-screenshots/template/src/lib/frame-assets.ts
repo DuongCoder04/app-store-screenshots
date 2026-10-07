@@ -1,13 +1,12 @@
 // Device frame geometry from Apple's product bezels.
 //
-// Apple's bezels (developer.apple.com/design/resources, Product Bezels) are
-// licensed for making mock-ups of apps for Apple platforms, not for
-// redistribution, so this repository does not ship them. Each user downloads the
-// packs, accepts Apple's licence and copies the PNGs into public/frames/ (see
-// README). /api/frames measures each PNG's transparent screen cutout and the
-// editor draws the screenshot under the real bezel. Without a file, iPhone Duo
-// uses a drawn frame whose screen has the exact capture aspect, and every other
-// device keeps its built-in frame. Android and CarPlay never use Apple bezels.
+// Apple's bezels (developer.apple.com/design/resources, Product Bezels) ship in
+// public/frames/; swapping a file changes the finish (see README). Apple
+// licenses them for mock-ups of apps for Apple platforms. /api/frames measures
+// each PNG's transparent screen cutout and the editor draws the screenshot under
+// the real bezel. Without a file, iPhone Duo uses a drawn frame whose screen has
+// the exact capture aspect, and every other device keeps its built-in frame.
+// Android and CarPlay never use Apple bezels.
 import { DUO_INNER_SCREEN, DUO_OUTER_SCREEN } from "./constants";
 import type { Device } from "./types";
 

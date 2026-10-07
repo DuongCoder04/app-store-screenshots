@@ -17,7 +17,7 @@ bun dev       # http://localhost:3000
 - **Screen controls** — drag-to-reorder screens, click-to-edit text, screenshot drop targets, per-screen layout switcher, dark/light toggle.
 - **Style Lab and Scene Playground** — compare complete looks for a deck and restyle every screen's backdrop, depth and headline at once. See [Style Lab](#style-lab) and [Scene Playground](#scene-playground).
 - **Image overlays, fonts, backgrounds and undo** — PNG/JPG overlay elements, a live screenshot font menu (with font import), per-screen custom backgrounds, and toolbar Undo/Redo. See [Editor controls](#editor-controls).
-- **Device frames** (`src/components/editor/device-frames.tsx`) — iPhone (PNG mockup), iPhone Duo outer and inner displays (a drawn frame), iPad, Apple TV, Apple Watch, CarPlay head unit, Mac window, Android phone, Android tablet (portrait + landscape), feature graphic. Apple's own bezels, if you add them to `public/frames/`, replace the built-in iPhone, iPad, Apple Watch, Apple TV, Mac and iPhone Duo frames (see Real bezels).
+- **Device frames** (`src/components/editor/device-frames.tsx`) — iPhone (PNG mockup), iPhone Duo outer and inner displays (a drawn frame), iPad, Apple TV, Apple Watch, CarPlay head unit, Mac window, Android phone, Android tablet (portrait + landscape), feature graphic. Apple's own bezels in `public/frames/` (bundled) replace the built-in iPhone, iPad, Apple Watch, Apple TV, Mac and iPhone Duo frames (see Real bezels).
 - **Auto-save (git-trackable)** — every change is persisted within ~600ms to **`app-store-screenshots.json`** at the project root (via `/api/project`) **and** mirrored to `localStorage` as an instant-paint cache. Commit `app-store-screenshots.json` and you can `git clone` to another machine and resume exactly where you left off.
 - **Multi-device decks** — iOS (iPhone, iPad, iPhone Duo outer/inner in portrait and landscape, Apple TV, Apple Watch, CarPlay, App Store creative assets), Mac, and Android decks live side by side; switching the platform tab keeps each tab's last device.
 - **One-click export** — bulk PNG export at any required App Store / Play Store resolution using `html-to-image`; each PNG is rendered from the current connected or isolated deck mode.
@@ -78,27 +78,27 @@ Use real captures from each display. A capture whose aspect doesn't match the di
 
 On a real capture the outer display's status and controls sit on a rail below the camera, so Apple's bezel covers nothing. Turned poses are taken with the phone turned left, matching Apple's landscape bezel.
 
-**Real bezels.** Apple publishes product bezels in [Apple Design Resources](https://developer.apple.com/design/resources/) (Product Bezels). Their licence allows using them to make mock-ups of apps for Apple platforms, but not redistributing them or using them for apps on other platforms. This template doesn't ship them. To use them, download the packs, accept Apple's licence (it appears when you open each `.dmg`), and copy PNGs from the packs' `PNG` folders into `public/frames/` with these names:
+**Real bezels.** The template ships Apple's product bezels from [Apple Design Resources](https://developer.apple.com/design/resources/) (Product Bezels) in `public/frames/`. Apple licenses them for making mock-ups of apps for Apple platforms, so never use them for other platforms. To change a finish or model, download Apple's pack and replace the file under the same name:
 
-| File | Device | Apple pack and PNG (screen cutout) |
+| File | Device | Bundled PNG from Apple's pack (screen cutout) |
 |------|--------|-------------------------------------|
-| `iphone-portrait.png` | iPhone, and the iPhone in App Store creatives | iPhone 18 → iPhone 18 Pro Max, Portrait (1320 × 2868) |
-| `ipad-portrait.png` | iPad | iPad Pro (M5) → 13", Portrait (2064 × 2752) |
-| `watch.png` | Apple Watch | Apple Watch Ultra 3 (422 × 514) |
+| `iphone-portrait.png` | iPhone, and the iPhone in App Store creatives | iPhone 18 → iPhone 18 Pro Max, Black, Portrait (1320 × 2868) |
+| `ipad-portrait.png` | iPad | iPad Pro (M5) → 13", Space Black, Portrait (2064 × 2752) |
+| `watch.png` | Apple Watch | Apple Watch Ultra 3 → Black + Ocean Band Black (422 × 514) |
 | `tv.png` | Apple TV | Apple TV → Apple TV - 4K (3840 × 2160) |
-| `mac.png` | Mac | MacBook Air M5 → 15-inch (2880 × 1864) |
-| `duo-outer-portrait.png` | iPhone Duo outer, portrait | iPhone Duo → Outer Closed Portrait (1398 × 2034) |
-| `duo-outer-landscape.png` | iPhone Duo outer, landscape | iPhone Duo → Outer Closed Landscape (optional: the portrait file is turned if absent) |
-| `duo-inner-portrait.png` | iPhone Duo inner, portrait | iPhone Duo → Inner Open Portrait (2007 × 2853) |
-| `duo-inner-landscape.png` | iPhone Duo inner, landscape | iPhone Duo → Inner Open Landscape (optional) |
+| `mac.png` | Mac | MacBook Air M5 → 15-inch Midnight (2880 × 1864) |
+| `duo-outer-portrait.png` | iPhone Duo outer, portrait | iPhone Duo → Night Sky, Outer Closed Portrait (1398 × 2034) |
+| `duo-outer-landscape.png` | iPhone Duo outer, landscape | iPhone Duo → Night Sky, Outer Closed Landscape (if removed, the portrait file is turned) |
+| `duo-inner-portrait.png` | iPhone Duo inner, portrait | iPhone Duo → Night Sky, Inner Open Portrait (2007 × 2853) |
+| `duo-inner-landscape.png` | iPhone Duo inner, landscape | iPhone Duo → Night Sky, Inner Open Landscape (2853 × 2007) |
 
-Any finish or band works. Each file listed has a screen cutout exactly the size of that deck's capture, except the Mac. No MacBook screen is 16:10, so a 2880 × 1800 Mac capture fills the MacBook Air 15" screen from the top and loses about 3% at the bottom. A capture taken on that MacBook fits exactly.
+Any finish or band works as a replacement. Each file listed has a screen cutout exactly the size of that deck's capture, except the Mac. No MacBook screen is 16:10, so a 2880 × 1800 Mac capture fills the MacBook Air 15" screen from the top and loses about 3% at the bottom. A capture taken on that MacBook fits exactly.
 
 `/api/frames` measures each file's transparent screen cutout, and the editor draws the capture under the bezel. Cameras, corners and cutouts therefore come from Apple's artwork, and devices are placed using the bezel's real aspect ratio.
 
 - Reload the editor after adding or replacing a file.
 - A file whose centre isn't transparent is reported in a toast and skipped.
-- `public/frames/*.png` is gitignored; keep the files out of public repositories.
+- Like fastlane frameit's frames, the bezels are bundled so every project gets real frames out of the box.
 - Without a file, iPhone Duo uses a drawn frame whose screen has the exact capture aspect, and every other device keeps its built-in frame.
 - CarPlay and Android always use built-in frames: Apple publishes no head-unit bezel, and the licence doesn't cover other platforms.
 
