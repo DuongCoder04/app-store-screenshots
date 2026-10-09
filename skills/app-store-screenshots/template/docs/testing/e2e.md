@@ -175,7 +175,7 @@ Two fixes came out of this:
 
 Fixes from the review of PR #44.
 
-- **Duo captures are matched within 0.5 %.** The two displays differ by 2.35 %, and the earlier 3 % tolerance let an outer capture pass as inner, so it was cropped without a warning. Other devices use 1 %, since every current iPhone capture size is within 0.4 %.
+- **Duo captures are matched within 0.5 %.** The two displays differ by 2.35 %, and the earlier 3 % tolerance let an outer capture pass as inner, so it was cropped without a warning. Other devices keep 3 %, which covers every Apple Watch size: they differ from the Ultra's screen by up to 2.6 %.
 - **Inline (data URI) captures are decoded on load,** so their size is known after a reload.
 - **Bezels are measured with a scanline flood fill over the alpha channel only.** All nine bundled bezels now measure in 250 ms instead of 2,065 ms (Node 24), with peak memory at 258 MB instead of 561 MB. The results are identical.
 

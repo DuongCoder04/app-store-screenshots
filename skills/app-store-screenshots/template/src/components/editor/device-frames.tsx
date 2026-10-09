@@ -354,8 +354,9 @@ export function IPad({ src, alt = "", style, hideEmpty }: FrameProps) {
 
 // A capture whose aspect is off by more than this is letterboxed rather than
 // cropped: cropping would cut real UI, which is worse than a visible bar.
-// iPhone captures of every current size are within 0.4 % of the bezel's screen.
-const FIT_TOLERANCE = 0.01;
+// Loose enough for every size a device accepts: Apple Watch slots differ from
+// the Ultra's 422 × 514 screen by up to 2.6 %.
+const FIT_TOLERANCE = 0.03;
 // The two iPhone Duo displays differ by only 2.35 % (1398 × 2034 against
 // 2007 × 2853), so Duo captures must match far more closely to tell an outer
 // capture from an inner one. Scaled-down captures of the right display pass.
