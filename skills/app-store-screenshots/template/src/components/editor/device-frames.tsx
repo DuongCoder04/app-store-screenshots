@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { MAC_RATIO, MAC_TITLE_BAR, PHONE_SCREEN } from "@/lib/constants";
-import { bezelGeometry, type DuoDevice } from "@/lib/frame-assets";
+import { bezelGeometry, isDuoDevice, type DuoDevice } from "@/lib/frame-assets";
 import type { Device } from "@/lib/types";
 import { img, imgSize } from "@/lib/image-cache";
 
@@ -354,11 +354,17 @@ export function IPad({ src, alt = "", style, hideEmpty }: FrameProps) {
 
 // A capture whose aspect is off by more than this is letterboxed rather than
 // cropped: cropping would cut real UI, which is worse than a visible bar.
+// Loose enough for every size a device accepts: Apple Watch slots differ from
+// the Ultra's 422 × 514 screen by up to 2.6 %.
 const FIT_TOLERANCE = 0.03;
+// The two iPhone Duo displays differ by only 2.35 % (1398 × 2034 against
+// 2007 × 2853), so Duo captures must match far more closely to tell an outer
+// capture from an inner one. Scaled-down captures of the right display pass.
+export const DUO_FIT_TOLERANCE = 0.005;
 
-export function captureFits(src: string, screenAspect: number) {
+export function captureFits(src: string, screenAspect: number, tolerance = FIT_TOLERANCE) {
   const size = imgSize(src);
-  return !size || Math.abs(size.w / size.h / screenAspect - 1) <= FIT_TOLERANCE;
+  return !size || Math.abs(size.w / size.h / screenAspect - 1) <= tolerance;
 }
 
 // A device drawn under Apple's bezel (or, for iPhone Duo without one, a drawn
@@ -415,7 +421,7 @@ function BezelFrame({ device, src, alt = "", style, hideEmpty }: FrameProps & { 
                 display: "block",
                 width: "100%",
                 height: "100%",
-                objectFit: device === "mac" || captureFits(src, g.screenAspect) ? "cover" : "contain",
+                objectFit: device === "mac" || captureFits(src, g.screenAspect, isDuoDevice(device) ? DUO_FIT_TOLERANCE : undefined) ? "cover" : "contain",
                 objectPosition: device === "mac" ? "top" : "center",
               }}
               draggable={false}

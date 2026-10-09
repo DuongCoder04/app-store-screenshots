@@ -11,33 +11,58 @@ const CLEAR_ALPHA = 24;
  * cut-ins are opaque islands inside that region, so they don't move the box.
  */
 export async function measureFrame(bytes: Buffer, src: string): Promise<MeasuredFrame> {
-  const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const { width, height, channels } = info;
-  const clear = (x: number, y: number) => data[(y * width + x) * channels + 3] <= CLEAR_ALPHA;
+  // Only the alpha channel matters: one byte per pixel instead of four.
+  const { data: alpha, info } = await sharp(bytes).ensureAlpha().extractChannel(3).raw().toBuffer({ resolveWithObject: true });
+  const { width, height } = info;
   const cx = Math.floor(width / 2);
   const cy = Math.floor(height / 2);
-  if (!clear(cx, cy)) {
+  if (alpha[cy * width + cx] > CLEAR_ALPHA) {
     throw new Error("the centre of the image is not transparent; export the bezel with an empty screen");
   }
 
+  // Scanline flood fill from the centre: each popped seed fills its whole row
+  // span, then seeds one pixel per unseen clear run in the rows above and below.
+  // A 4K TV cutout is millions of pixels, so nothing is allocated per pixel.
   const seen = new Uint8Array(width * height);
-  const stack = [cy * width + cx];
-  seen[stack[0]] = 1;
+  const open = (i: number) => !seen[i] && alpha[i] <= CLEAR_ALPHA;
+  let stack = new Int32Array(1024);
+  let top = 0;
+  const push = (i: number) => {
+    if (top === stack.length) {
+      const grown = new Int32Array(stack.length * 2);
+      grown.set(stack);
+      stack = grown;
+    }
+    stack[top++] = i;
+  };
+  push(cy * width + cx);
   let minX = cx, maxX = cx, minY = cy, maxY = cy;
-  while (stack.length) {
-    const index = stack.pop()!;
-    const x = index % width;
-    const y = (index - x) / width;
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
+  while (top) {
+    const seed = stack[--top];
+    if (!open(seed)) continue;
+    const y = (seed / width) | 0;
+    const row = y * width;
+    let left = seed - row;
+    let right = left;
+    while (left > 0 && open(row + left - 1)) left--;
+    while (right < width - 1 && open(row + right + 1)) right++;
+    seen.fill(1, row + left, row + right + 1);
+    if (left < minX) minX = left;
+    if (right > maxX) maxX = right;
     if (y < minY) minY = y;
     if (y > maxY) maxY = y;
-    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-      const next = ny * width + nx;
-      if (seen[next] || !clear(nx, ny)) continue;
-      seen[next] = 1;
-      stack.push(next);
+    for (const ny of [y - 1, y + 1]) {
+      if (ny < 0 || ny >= height) continue;
+      const nrow = ny * width;
+      let inRun = false;
+      for (let x = left; x <= right; x++) {
+        if (open(nrow + x)) {
+          if (!inRun) push(nrow + x);
+          inRun = true;
+        } else {
+          inRun = false;
+        }
+      }
     }
   }
   if (minX === 0 || minY === 0 || maxX === width - 1 || maxY === height - 1) {

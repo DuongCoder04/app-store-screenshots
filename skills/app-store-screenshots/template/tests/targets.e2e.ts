@@ -193,3 +193,25 @@ test('duo folded + open pairs the other display and never reuses the front captu
   await expect(screen.getByText('Export includes placeholder screenshots', { exact: true })).toBeVisible();
   await expect(browser.locator('[data-sonner-toast]').first()).toContainText('1 screen will export with an empty device.');
 });
+
+// The two Duo displays differ in shape by only 2.35 %, so an outer capture on the
+// inner deck must still be flagged (and letterboxed), whether it is served from a
+// URL or saved inline in the project, where its size is only known after decoding.
+const outerCapture = '<svg xmlns="http://www.w3.org/2000/svg" width="1398" height="2034"><rect width="1398" height="2034" fill="#0ea5e9"/></svg>';
+for (const [how, screenshot] of [
+  ['served', '/screenshots/duo/outer.svg'],
+  ['inline', `data:image/svg+xml;base64,${Buffer.from(outerCapture).toString('base64')}`],
+] as const) {
+  test(`an outer-display capture on the inner deck is flagged (${how})`, async ({ app, browser, screen }) => {
+    await browser.route('**/screenshots/duo/outer.svg', route => route.fulfill({ body: outerCapture, headers: { 'content-type': 'image/svg+xml' } }));
+    await mock(browser, project('duo-inner', { 'duo-inner': [slide('Wrong display', 'hero', { screenshot })] }));
+    await app.open('/');
+    await expect(screen.getByRole('textbox', 'Headline')).toHaveValue('Wrong display');
+    await expect(screen.getByText(/isn't 2007 × 2853/)).toBeVisible();
+    // Letterboxed, never cropped.
+    await eventually(async () => {
+      const fits = await browser.evaluate(() => [...document.querySelectorAll('main img')].map(i => getComputedStyle(i).objectFit));
+      await expect(fits).toContain('contain');
+    });
+  });
+}
