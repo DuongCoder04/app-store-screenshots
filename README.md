@@ -14,7 +14,8 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - Keeps older projects safe with isolated-screen export mode until you opt into connected crops
 - Saves every deck to `app-store-screenshots.json`, so the project is git-trackable and resumable
 - Uploads picked screenshots into `public/screenshots/uploaded/<hash>.png`
-- Supports iPhone, iPad, Apple TV, Apple Watch, CarPlay, Mac, Android phone, Android tablet, and Play Store feature graphic decks
+- Supports iPhone, iPhone Duo (outer and inner displays, portrait and landscape), iPad, Apple TV, Apple Watch, CarPlay, Mac, Android phone, Android tablet, and Play Store feature graphic decks
+- Makes App Store creative assets for the product page header and search results (one universal 5244 x 2950 asset, or separate header and search assets)
 - Exports exact PNG bundles for all required App Store, Mac App Store, and Google Play sizes
 - Supports locales, RTL-aware copy/layout guidance, reusable themes, and in-place project migration
 - Ships 18 named visual styles with deep specs and a headline copy library
@@ -30,7 +31,7 @@ Example screenshots generated with this skill were accepted for [Bloom Coffee Sh
 - **Scene Playground** - restyle every screen at once: backdrops (gradient, solid, aurora, spotlight, grid, dots, ruled) that can flow across the whole strip, decorations, device shadow, glow and 3D tilt, and headline weight, case and alignment.
 - **Magnifier** - add a loupe to any screen that zooms into one detail of its screenshot; aim it on a thumbnail, set the zoom and shape, and drag it anywhere.
 - **Platform switcher** - iOS, Mac, and Android tabs keep every deck side by side while sharing the same editor workflow.
-- **Device selector** - iPhone, iPad, Apple TV, Apple Watch, and CarPlay under iOS; Android phone, Android tablets, and the feature graphic under Android. The Mac tab is a single 16:10 Mac deck.
+- **Device selector** - iPhone, iPad, iPhone Duo outer and inner, Apple TV, Apple Watch, CarPlay, and App Store creative assets under iOS; Android phone, Android tablets, and the feature graphic under Android. The Mac tab is a single 16:10 Mac deck.
 - **Autosave** - writes to disk through `/api/project`, mirrors to `localStorage`, and detects newer disk revisions before overwriting work from another tab or agent. Failed saves can be retried; unsaved edits trigger a warning before leaving.
 - **Export bundle** - downloads a zip organized by platform, device, resolution, and locale.
 
@@ -120,6 +121,7 @@ project/
 ├── public/
 │   ├── mockup.png
 │   ├── app-icon.png
+│   ├── frames/                 # Apple's device bezels (bundled)
 │   └── screenshots/
 │       ├── apple/
 │       │   ├── iphone/{locale}/01.png
@@ -188,8 +190,22 @@ Uploaded files are saved under `public/screenshots/uploaded/`, and the canonical
 | Apple Watch Series 4 | 368 x 448 |
 | Apple Watch Series 3 | 312 x 390 |
 | CarPlay (iPhone slot, landscape) | 2868 x 1320, 2778 x 1284, 2622 x 1206, 2436 x 1125 |
+| iPhone Duo outer display | 1398 x 2034 portrait, 2034 x 1398 landscape |
+| iPhone Duo inner display | 2007 x 2853 portrait, 2853 x 2007 landscape |
 
 App Store Connect has no CarPlay screenshot slot: CarPlay shots are uploaded into the iPhone slot, so the CarPlay deck exports landscape iPhone sizes with a head-unit frame.
+
+Each iPhone Duo display and orientation has its own deck, so portrait and landscape keep independent compositions. Landscape decks make the device the hero under a one-line headline, and **Folded + open** pairs the closed phone with the opened one. [`iphone-duo.md`](skills/app-store-screenshots/iphone-duo.md) has the design research and the rules the skill follows: the displays, what real Duo captures look like, and what the first published sets do. Use real captures from each display: a capture from another display is letterboxed, never cropped or stretched, and the editor says so. Apple's product bezels from [Apple Design Resources](https://developer.apple.com/design/resources/) ship in the template's `public/frames/`, so iPhone, iPad, Apple Watch, Apple TV, Mac and iPhone Duo are drawn in Apple's own frames. The editor measures each frame's screen cutout. Swap a file for another finish from Apple's pack. Apple licenses the bezels for mock-ups of apps for Apple platforms only. See the [template README](skills/app-store-screenshots/template/README.md#iphone-duo) for the file names.
+
+### App Store creative assets
+
+| Asset | Resolution |
+|-------|------------|
+| Universal (header + search results) | 5244 x 2950 |
+| Product page header | 3840 x 1646 |
+| Search results (3:2) | 3840 x 2560, 1920 x 1280 |
+
+Creative assets use the deck's theme, font, scene and editable copy, with layouts kept inside the art safe area measured from Apple's templates. The editor shows non-exporting safe-area guides and, for the universal asset, estimated header and search crops with live previews. Check final placement in App Store Connect's Preview tool.
 
 ### Mac App Store
 
@@ -210,7 +226,7 @@ Mac has its own **Mac** tab because App Store Connect lists macOS as a separate 
 | 10" tablet landscape | 2560 x 1600 |
 | Feature graphic | 1024 x 500 |
 
-Screenshots are designed at the largest size for each device and scaled down for smaller exports. Every export waits until each screenshot has actually painted (Safari/WebKit decodes them asynchronously) and warns instead of silently writing a blank device. Android, iPad, Apple TV, Apple Watch, CarPlay and Mac frames are CSS-rendered, while iPhone uses the included `mockup.png` bezel.
+Screenshots are designed at the largest size for each device and scaled down for smaller exports. Every export waits until each screenshot has actually painted (Safari/WebKit decodes them asynchronously) and warns instead of silently writing a blank device. Android, iPad, Apple TV, Apple Watch, CarPlay and Mac frames are CSS-rendered, iPhone uses the included `mockup.png` bezel, and Apple devices use Apple's bundled bezels. Every PNG is opaque 24-bit RGB with no alpha channel.
 
 ## Project State
 
