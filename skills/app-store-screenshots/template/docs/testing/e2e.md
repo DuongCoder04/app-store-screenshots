@@ -15,7 +15,7 @@ bun run test:e2e
 SCREENSHOTS_E2E_PRODUCTION=1 bun run test:e2e
 ```
 
-`bun run test:e2e` runs 56 tests: 53 tests that directly drive/inspect the product with Tester Army (30 in `tests/editor.e2e.ts`, 11 for Style Lab, Scene Playground and the magnifier in `tests/scene-style-lab.e2e.ts`, 12 for iPhone Duo, App Store creatives and the issue 41 export regression in `tests/targets.e2e.ts`), plus three tests that run 56 existing regression groups (35 browser/export, 12 UI, nine API). Nested loops cover every advertised device size, layout, orientation, theme and built-in font. Counts refer to test/group definitions, not every loop iteration.
+`bun run test:e2e` runs 58 tests: 55 tests that directly drive/inspect the product with Tester Army (30 in `tests/editor.e2e.ts`, 11 for Style Lab, Scene Playground and the magnifier in `tests/scene-style-lab.e2e.ts`, 14 for iPhone Duo, App Store creatives and the issue 41 export regression in `tests/targets.e2e.ts`), plus three tests that run 56 existing regression groups (35 browser/export, 12 UI, nine API). Nested loops cover every advertised device size, layout, orientation, theme and built-in font. Counts refer to test/group definitions, not every loop iteration.
 
 For one direct regression:
 
@@ -170,3 +170,16 @@ Two fixes came out of this:
 
 - **Bezel cutouts are now measured per corner** (`radii` in `/api/frames`) and the capture is clipped to that shape. The Duo's outer display is square on its hinge side and rounded on the other, so a single radius let the capture poke past the bezel's body.
 - **Turned poses are captured with the phone turned left.** That orientation matches Apple's landscape bezel, which has the camera top left.
+
+### Duo capture checks and bezel measurement (9 October 2026)
+
+Fixes from the review of PR #44.
+
+- **Duo captures are matched within 0.5 %.** The two displays differ by 2.35 %, and the earlier 3 % tolerance let an outer capture pass as inner, so it was cropped without a warning. Other devices use 1 %, since every current iPhone capture size is within 0.4 %.
+- **Inline (data URI) captures are decoded on load,** so their size is known after a reload.
+- **Bezels are measured with a scanline flood fill over the alpha channel only.** All nine bundled bezels now measure in 250 ms instead of 2,065 ms (Node 24), with peak memory at 258 MB instead of 561 MB. The results are identical.
+
+| Check | Result |
+| --- | --- |
+| New tests: an outer-display capture on the inner deck is flagged, served and inline | Both fail on the old code. The inline test still fails with only the tolerance fixed. Both pass with the fixes. |
+| Dev Tester Army suite | 58/58 passed; all 56 harness groups passed |

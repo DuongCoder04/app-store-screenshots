@@ -77,7 +77,7 @@ import type {
 import { BackgroundControls } from "./background-controls";
 import { ScreenshotPicker } from "./screenshot-picker";
 import { CalloutControls } from "./callout-controls";
-import { captureFits } from "./device-frames";
+import { DUO_FIT_TOLERANCE, captureFits } from "./device-frames";
 import { calloutAvailable, getCanvas, getElementTransform } from "./slide-canvas";
 
 type Props = {
@@ -296,7 +296,7 @@ export function Inspector({
 function CaptureNote({ device, src }: { device: Device; src: string }) {
   if (!isDuoDevice(device)) return null;
   const { w, h } = CANVAS[device];
-  const fits = !src || captureFits(src, duoGeometry(device).screenAspect);
+  const fits = !src || captureFits(src, duoGeometry(device).screenAspect, DUO_FIT_TOLERANCE);
   return (
     <p className={cn("text-[11px] leading-relaxed", fits ? "text-muted-foreground" : "text-amber-600")}>
       {fits

@@ -10,6 +10,14 @@ const pending = new Map<string, Promise<void>>();
 
 async function fetchAsDataUrl(path: string): Promise<{ data: string; w: number; h: number } | null> {
   try {
+    // A capture saved inline in the project is already a data URI: just decode
+    // it, so its size is known (frames and warnings check a capture's aspect).
+    if (path.startsWith("data:")) {
+      const image = new Image();
+      image.src = path;
+      await image.decode();
+      return { data: path, w: image.naturalWidth, h: image.naturalHeight };
+    }
     const resp = await fetch(path, { signal: AbortSignal.timeout(10000) });
     if (!resp.ok) return null;
     const blob = await resp.blob();

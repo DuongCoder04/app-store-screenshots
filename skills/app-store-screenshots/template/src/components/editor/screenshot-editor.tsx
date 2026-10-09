@@ -36,7 +36,7 @@ import type {
 import { Inspector } from "./inspector";
 import { PreviewStage } from "./preview-stage";
 import { Sidebar } from "./sidebar";
-import { captureFits } from "./device-frames";
+import { DUO_FIT_TOLERANCE, captureFits } from "./device-frames";
 import { DeckCanvas, getCanvas } from "./slide-canvas";
 import { StyleLab } from "./style-lab";
 import { Toolbar } from "./toolbar";
@@ -110,7 +110,10 @@ export function ScreenshotEditor() {
     const allSlides: Slide[] = Object.values(state.slidesByDevice).flat();
     for (const s of allSlides) {
       for (const raw of [s.screenshot, s.screenshotSecondary]) {
-        if (!raw || raw.startsWith("data:")) continue;
+        if (!raw) continue;
+        // Inline (data URI) captures are decoded too, so their size is known
+        // after a reload and a mismatched Duo capture is still flagged.
+        if (raw.startsWith("data:")) { paths.add(raw); continue; }
         if (raw.includes("{locale}")) {
           for (const loc of state.locales) paths.add(resolveScreenshot(raw, loc));
         } else {
@@ -123,7 +126,8 @@ export function ScreenshotEditor() {
     }
     return Array.from(paths).sort();
   }, [state.slidesByDevice, state.appIcon, state.locales, state.device, framesLoaded]);
-  const assetSig = assetPaths.join("|");
+  // Inline captures can be megabytes long; a length and tail stand in for them.
+  const assetSig = assetPaths.map((p) => (p.startsWith("data:") ? `data:${p.length}:${p.slice(-48)}` : p)).join("|");
 
   React.useEffect(() => {
     // Wait for the bezel measurements, so the first paint already has the
@@ -490,7 +494,7 @@ export function ScreenshotEditor() {
     // cropped or stretched, so name it rather than let it pass unnoticed.
     const fitsDisplay = (raw: string | undefined, display: Device) =>
       !raw || !isDuoDevice(display) ||
-      locales.every((loc) => captureFits(resolveScreenshot(raw, loc), duoGeometry(display).screenAspect));
+      locales.every((loc) => captureFits(resolveScreenshot(raw, loc), duoGeometry(display).screenAspect, DUO_FIT_TOLERANCE));
     const mismatched = isDuoDevice(device)
       ? currentSlides.filter((slide) =>
           slideNeedsScreenshot(device, slide) &&
